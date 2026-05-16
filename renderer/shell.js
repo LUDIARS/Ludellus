@@ -12,6 +12,7 @@ import {
   startUniLoop, stopUniLoop,
   speak, cancel as cancelSpeech,
   getBestScore, saveScore, hasAttainedFullScore, getStats,
+  getOrCreateMain, listBranches, applyRule, listRules, pathToMain,
 } from "./lib/index.js";
 
 import { UniTapScene } from "./games/uni-tap/scene.js";
@@ -129,6 +130,81 @@ btnStart.addEventListener("click", async () => {
     const first = manager.list()[0];
     if (first) await switchSceneWithFade(first.id);
   }
+});
+
+// ── AI 改修 modal ─────────────────────────────────
+const btnAiMod = document.getElementById("btnAiMod");
+const aiModModal = document.getElementById("aiModModal");
+const aiModRules = document.getElementById("aiModRules");
+const aiModBranchList = document.getElementById("aiModBranchList");
+const btnAiModClose = document.getElementById("btnAiModClose");
+
+function openAiModModal() {
+  if (!manager.activeId) {
+    showToast("まず あそびを えらんでね");
+    return;
+  }
+  renderAiModRules();
+  renderAiModBranches();
+  aiModModal.hidden = false;
+}
+
+function closeAiModModal() {
+  aiModModal.hidden = true;
+}
+
+function renderAiModRules() {
+  aiModRules.innerHTML = "";
+  for (const r of listRules()) {
+    const card = document.createElement("button");
+    card.className = "ai-mod-modal__rule";
+    card.innerHTML = `<div class="ai-mod-modal__rule-label">${r.label}</div><div class="ai-mod-modal__rule-desc">${r.description}</div>`;
+    card.addEventListener("click", () => applyAiMod(r.key));
+    aiModRules.appendChild(card);
+  }
+}
+
+function renderAiModBranches() {
+  aiModBranchList.innerHTML = "";
+  const gameId = manager.activeId;
+  // main を必ず存在させる (現在のモードは scene 内部、 簡略のため "default" 固定)
+  const mode = "default";
+  getOrCreateMain(gameId, mode);
+  const branches = listBranches(gameId);
+  if (branches.length === 0) {
+    aiModBranchList.innerHTML = `<div class="ai-mod-branch">まだ えだは ないよ</div>`;
+    return;
+  }
+  for (const b of branches) {
+    const div = document.createElement("div");
+    div.className = "ai-mod-branch";
+    const path = pathToMain(b.id);
+    const hops = path.length - 1; // main 自身を除く
+    const created = new Date(b.createdAt).toLocaleDateString();
+    div.innerHTML = `
+      <div><strong>${b.id}</strong> (${created})</div>
+      <div class="ai-mod-branch__path">main まで ${hops} だん${hops > 0 ? "" : " (これが main)"}</div>
+    `;
+    aiModBranchList.appendChild(div);
+  }
+}
+
+function applyAiMod(ruleKey) {
+  const gameId = manager.activeId;
+  const mode = "default";
+  const main = getOrCreateMain(gameId, mode);
+  // 現状は main 直下に作る (将来: 現在 active なブランチ id を保持して下流に伸ばす)
+  const child = applyRule(main.id, ruleKey);
+  if (child) {
+    showToast(`✨ あたらしい えだ「${child.id}」 を つくったよ`);
+    renderAiModBranches();
+  }
+}
+
+btnAiMod.addEventListener("click", openAiModModal);
+btnAiModClose.addEventListener("click", closeAiModModal);
+aiModModal.addEventListener("click", (e) => {
+  if (e.target === aiModModal) closeAiModModal();
 });
 
 // ── メインループ ──────────────────────────────────
