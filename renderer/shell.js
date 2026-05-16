@@ -20,6 +20,7 @@ import { CURRICULUM_UNITS, findUnit, defaultUnitTags } from "./lib/curriculum.js
 import { UniTapScene } from "./games/uni-tap/scene.js";
 import { UniRainScene } from "./games/uni-rain/scene.js";
 import { UniLauncherScene } from "./games/uni-launcher/scene.js";
+import { UniMathScene } from "./games/uni-math/scene.js";
 
 // ── DOM ───────────────────────────────────────────
 const canvas = document.getElementById("game");
@@ -79,6 +80,7 @@ const manager = new SceneManager(ctx);
 manager.register(UniTapScene);
 manager.register(UniRainScene);
 manager.register(UniLauncherScene);
+manager.register(UniMathScene);
 
 // ── 切替 chip UI ─────────────────────────────────
 function renderSwitcher() {
