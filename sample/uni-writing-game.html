@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>うにと もじを なぞろう</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Yusei+Magic&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f7f1e8;
+    --paper: #fdfaf3;
+    --ink: #2a2118;
+    --uni: #d97757;
+    --uni-deep: #b85a3e;
+    --uni-soft: #f0c8b3;
+    --shadow: rgba(60, 35, 20, 0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Zen Maru Gothic', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(217,119,87,0.06) 0%, transparent 35%),
+      radial-gradient(circle at 88% 82%, rgba(217,119,87,0.05) 0%, transparent 40%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.6  0 0 0 0 0.4  0 0 0 0 0.2  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    touch-action: none;
+    overscroll-behavior: none;
+  }
+  .header {
+    position: absolute; top: 24px; left: 0; right: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+  .title {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 14px; letter-spacing: 0.3em;
+    color: var(--uni-deep); opacity: 0.7;
+    text-transform: uppercase;
+  }
+  .word-row {
+    margin-top: 92px;
+    display: flex; gap: 8px;
+    justify-content: center; flex-wrap: wrap;
+    min-height: 56px; padding: 0 12px;
+    transition: transform 0.3s ease;
+  }
+  .word-row.speaking { animation: word-breathe 1.4s ease-in-out infinite; }
+  @keyframes word-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .word-row.speaking .word-char { color: var(--ink); }
+  .word-row.speaking .word-char.now-speaking {
+    color: var(--uni);
+    animation: char-pop 0.42s ease;
+  }
+  @keyframes char-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.32); color: var(--uni-deep); }
+    100% { transform: scale(1.1); }
+  }
+  .word-char {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 36px;
+    color: rgba(42, 33, 24, 0.18);
+    transition: color 0.3s ease, transform 0.3s ease;
+    min-width: 36px; text-align: center;
+  }
+  .word-char.active { color: var(--uni); transform: scale(1.1); }
+  .word-char.done { color: var(--ink); }
+
+  .mode-selector {
+    position: absolute; top: 56px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 6px;
+    pointer-events: auto;
+    padding: 0 12px;
+  }
+  .mode-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700; font-size: 13px;
+    background: rgba(253, 250, 243, 0.7);
+    color: var(--uni-deep);
+    border: 1.5px solid rgba(217, 119, 87, 0.25);
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+  .mode-btn:active { transform: scale(0.94); }
+  .mode-btn.active {
+    background: var(--uni); color: var(--paper); border-color: var(--uni);
+    box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+  }
+
+  #canvas-wrap {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; max-width: 720px;
+    position: relative;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--paper), #f5ecd9);
+    box-shadow:
+      0 24px 60px var(--shadow),
+      0 4px 12px rgba(60,35,20,0.04),
+      inset 0 0 0 1px rgba(217,119,87,0.08);
+    cursor: pointer;
+    touch-action: none;
+  }
+
+  .footer {
+    position: absolute; bottom: 28px; left: 0; right: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+  .hint {
+    display: inline-block;
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 14px;
+    color: var(--uni-deep);
+    background: rgba(253,250,243,0.85);
+    padding: 10px 22px;
+    border-radius: 999px;
+    letter-spacing: 0.1em;
+    box-shadow: 0 4px 14px var(--shadow);
+    border: 1.5px solid rgba(217,119,87,0.2);
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  .start-overlay {
+    position: fixed; inset: 0;
+    background: rgba(247,241,232,0.96);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; cursor: pointer;
+    text-align: center;
+    transition: opacity 0.6s ease;
+  }
+  .start-overlay.hidden { opacity: 0; pointer-events: none; }
+  .start-mark {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 52px; color: var(--uni);
+    margin-bottom: 8px; line-height: 1.1;
+  }
+  .start-sub {
+    font-size: 14px; letter-spacing: 0.2em;
+    color: var(--uni-deep); opacity: 0.8;
+    margin-bottom: 36px;
+  }
+  .start-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    background: var(--uni); color: var(--paper);
+    padding: 18px 44px; border-radius: 999px;
+    font-size: 18px; letter-spacing: 0.15em;
+    box-shadow: 0 8px 24px rgba(217,119,87,0.35);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 4px 14px rgba(217,119,87,0.3);
+  }
+
+  @media (max-width: 480px) {
+    .word-char { font-size: 28px; min-width: 28px; }
+    .title { font-size: 12px; }
+    .word-row { margin-top: 90px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="header"><div class="title">うに ✦ もじ あそび</div></div>
+  <div class="mode-selector" id="modeSelector">
+    <button class="mode-btn active" data-mode="all">ぜんぶ</button>
+    <button class="mode-btn" data-mode="hiragana">あ</button>
+    <button class="mode-btn" data-mode="katakana">ア</button>
+    <button class="mode-btn" data-mode="kanji">漢</button>
+  </div>
+  <div class="word-row" id="wordRow"></div>
+  <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+  <div class="footer"><span class="hint" id="hint">ゆびで てんを なぞろう</span></div>
+</div>
+
+<div class="start-overlay" id="startOverlay">
+  <div class="start-mark">✦</div>
+  <div class="start-sub">UNI ✦ NAZORU</div>
+  <button class="start-btn" id="startBtn">はじめる</button>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   WORD LIST (250)
+   ============================================================ */
+const WORDS = [
+  // ── ひらがな (75) ──
+  "すいか","りんご","みかん","いちご","ぶどう","もも","かき","なし","めろん","ばなな",
+  "うさぎ","ねこ","いぬ","ぞう","きりん","とら","さる","くま","うし","うま",
+  "ぶた","ひつじ","やぎ","かえる","かめ","いるか","くじら","さかな","たこ","いか",
+  "かに","えび","ちょう","はち","あり","くも","とんぼ","せみ","かぶとむし","てんとうむし",
+  "はな","ほし","そら","あめ","ゆき","かぜ","うみ","もり","みず","つち",
+  "いし","すな","ふね","ぼうし","くつ","かばん","ほん","つくえ","いす","まど",
+  "とびら","かべ","やね","さら","はし","なべ","ごはん","おにぎり","うどん","そば",
+  "たまご","みそ","しお","おちゃ","あめだま",
+  // ── カタカナ (75) ──
+  "アンパンマン","ロボット","ピアノ","ギター","バイオリン","ドラム","テレビ","ラジオ","カメラ","パソコン",
+  "スマホ","ゲーム","アニメ","マンガ","ヒーロー","パン","ケーキ","クッキー","チョコレート","アイス",
+  "ジュース","コーヒー","ミルク","ヨーグルト","ハンバーガー","ピザ","スパゲッティ","サラダ","スープ","オムレツ",
+  "バナナ","オレンジ","レモン","トマト","キャベツ","ライオン","パンダ","コアラ","ペンギン","フラミンゴ",
+  "バス","タクシー","トラック","バイク","ヘリコプター","ロケット","サッカー","バスケット","テニス","スキー",
+  "ボール","ラケット","スケート","プール","グランド","ノート","ペン","クレヨン","シール","ハサミ",
+  "メガネ","マスク","ハンカチ","タオル","リュック","ベッド","ソファ","テーブル","カーテン","ランプ",
+  "ドア","キッチン","トイレ","ベランダ","ガレージ",
+  // ── 漢字 (100) ──
+  "山","川","海","空","森","木","花","草","葉","月",
+  "日","火","水","土","金","石","雨","雪","風","犬",
+  "魚","鳥","牛","馬","虫","目","耳","口","手","足",
+  "頭","顔","父","母","兄","姉","弟","妹","男","女",
+  "子","人","赤","青","白","黒","黄","茶","緑","銀色",
+  "学校","教室","先生","生徒","勉強","算数","国語","理科","社会","音楽",
+  "体育","図画","春夏秋冬","朝","昼","夜","夕方","今日","明日","昨日",
+  "毎日","一年","二月","三日","四時","五分","六回","七色","八方","九時",
+  "十円","百円","千円","東西","南北","上下","左右","中","前後","内外",
+  "電車","汽車","自転車","飛行機","新幹線","病院","図書館","公園","会社","工場"
+];
+
+/* ============================================================
+   CHARACTER CATEGORY (mode filter)
+   ============================================================ */
+function isHiragana(ch) {
+  const c = ch.charCodeAt(0);
+  return (c >= 0x3040 && c <= 0x309F) || c === 0x30FC;
+}
+function isKatakana(ch) {
+  const c = ch.charCodeAt(0);
+  return (c >= 0x30A0 && c <= 0x30FF) || (c >= 0x31F0 && c <= 0x31FF);
+}
+function isKanji(ch) {
+  const c = ch.charCodeAt(0);
+  return c >= 0x4E00 && c <= 0x9FFF;
+}
+function wordCategory(word) {
+  let h = 0, k = 0, j = 0;
+  for (const ch of word) {
+    if (isKanji(ch)) j++;
+    else if (isKatakana(ch)) k++;
+    else if (isHiragana(ch)) h++;
+  }
+  if (j > 0) return 'kanji';
+  if (k > 0 && h === 0) return 'katakana';
+  if (h > 0 && k === 0) return 'hiragana';
+  return 'mixed';
+}
+const wordsByCategory = {
+  all: WORDS.slice(),
+  hiragana: WORDS.filter(w => wordCategory(w) === 'hiragana'),
+  katakana: WORDS.filter(w => wordCategory(w) === 'katakana'),
+  kanji: WORDS.filter(w => wordCategory(w) === 'kanji')
+};
+let currentMode = 'all';
+let lastPickedWord = '';
+
+/* ============================================================
+   AUDIO — 機械音声系の「うに」効果音
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playSyllable(when, vowel, pitch) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  const dur = 0.13;
+  const t0 = ctx.currentTime + when;
+  const osc1 = ctx.createOscillator(); osc1.type = 'sawtooth';
+  const osc2 = ctx.createOscillator(); osc2.type = 'square';
+  osc1.frequency.value = pitch;
+  osc2.frequency.value = pitch * 1.005;
+  const f1 = ctx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 9;
+  const f2 = ctx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 12;
+  if (vowel === 'u') { f1.frequency.value = 320; f2.frequency.value = 800; }
+  else               { f1.frequency.value = 280; f2.frequency.value = 2200; }
+  const f3 = ctx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 18;
+  f3.frequency.value = vowel === 'i' ? 1500 : 700;
+  const mix = ctx.createGain(); mix.gain.value = 0.5;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, t0);
+  env.gain.linearRampToValueAtTime(0.18, t0 + 0.012);
+  env.gain.setValueAtTime(0.18, t0 + dur - 0.04);
+  env.gain.linearRampToValueAtTime(0, t0 + dur);
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const x = (i - 128) / 128;
+    curve[i] = Math.tanh(x * 2.4) * 0.85;
+  }
+  shaper.curve = curve;
+  osc1.connect(f1); osc2.connect(f2);
+  f1.connect(mix); f2.connect(mix); osc2.connect(f3); f3.connect(mix);
+  mix.connect(shaper); shaper.connect(env); env.connect(ctx.destination);
+  osc1.start(t0); osc2.start(t0);
+  osc1.stop(t0 + dur); osc2.stop(t0 + dur);
+}
+function playUni(pitchOffset) {
+  pitchOffset = pitchOffset || 0;
+  const base = 182 + Math.random() * 14 + pitchOffset;
+  playSyllable(0,    'u', base);
+  playSyllable(0.13, 'i', base * 1.22);
+}
+
+// 「うに」ループ — なぞり中に鳴らし続ける機械音声
+let uniLoopId = null;
+function startUniLoop() {
+  if (uniLoopId) return;
+  const tick = () => {
+    playUni();
+    uniLoopId = setTimeout(tick, 260 + Math.random() * 50);
+  };
+  tick();
+}
+function stopUniLoop() {
+  if (uniLoopId) { clearTimeout(uniLoopId); uniLoopId = null; }
+}
+
+function speakWord(word, opts) {
+  opts = opts || {};
+  const onStart    = opts.onStart    || function(){};
+  const onBoundary = opts.onBoundary || function(){};
+  const onComplete = opts.onComplete || function(){};
+  let finished = false;
+  const finish = () => { if (!finished) { finished = true; onComplete(); } };
+
+  if (!('speechSynthesis' in window)) {
+    onStart();
+    finish();
+    return;
+  }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.lang = 'ja-JP'; u.rate = 0.85; u.pitch = 1.05;
+  const voices = speechSynthesis.getVoices();
+  const ja = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
+  if (ja) u.voice = ja;
+  u.onstart = () => onStart();
+  u.onboundary = (ev) => {
+    // ev.charIndex = 発話中の文字位置 (ブラウザによっては来ない)
+    onBoundary(ev.charIndex || 0);
+  };
+  u.onend = finish;
+  u.onerror = finish;
+  speechSynthesis.speak(u);
+  // 全体タイムアウト (おしゃべりがフリーズするブラウザのフォールバック)
+  setTimeout(finish, 2500 + word.length * 600);
+}
+
+/* ============================================================
+   CANVAS SETUP
+   ============================================================ */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const wrap = document.getElementById('canvas-wrap').getBoundingClientRect();
+  const side = Math.min(wrap.width - 24, wrap.height - 24, 540);
+  W = Math.floor(side); H = Math.floor(side);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  repositionBgUnis();
+}
+window.addEventListener('resize', resize);
+
+/* ============================================================
+   CHARACTER MASK  (文字をオフスクリーンに描画してクリップマスクにする)
+   ============================================================ */
+const MASK_SIZE = 220;
+const offCanvas = document.createElement('canvas');
+offCanvas.width = MASK_SIZE; offCanvas.height = MASK_SIZE;
+const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+let totalMaskPixels = 0; // 文字が占めるピクセル数 (カバレッジ計算用)
+
+function buildCharMask(char) {
+  offCtx.clearRect(0, 0, MASK_SIZE, MASK_SIZE);
+  offCtx.fillStyle = '#2a2118';
+  offCtx.font = '900 ' + Math.floor(MASK_SIZE * 0.78) + 'px "Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif';
+  offCtx.textAlign = 'center';
+  offCtx.textBaseline = 'middle';
+  offCtx.fillText(char, MASK_SIZE / 2, MASK_SIZE / 2 + 4);
+
+  // 文字の総ピクセル数を事前計算しておく
+  const d = offCtx.getImageData(0, 0, MASK_SIZE, MASK_SIZE).data;
+  totalMaskPixels = 0;
+  for (let i = 3; i < d.length; i += 4) { if (d[i] > 128) totalMaskPixels++; }
+}
+
+/* ============================================================
+   UNI CHARACTER — メイン用 & 背景用 共通クラス
+   ============================================================ */
+class Uni {
+  constructor(x, y, scale) {
+    this.x = this.tx = x;
+    this.y = this.ty = y;
+    this.scale = this.scaleTarget = scale;
+    this.baseScale = scale;
+
+    this.tentacles = [];
+    const angles = [0.05, 0.55, 1.05, 1.5, 1.95, 2.45, 2.95, 3.55, 4.1, 4.65, 5.25];
+    const lens   = [22,  28,   24,   30,  26,   22,   28,   24,   30,  25,   27];
+    for (let i = 0; i < angles.length; i++) {
+      this.tentacles.push({
+        baseAngle: angles[i],
+        baseLen: lens[i],
+        len: lens[i], lenTarget: lens[i],
+        wig: Math.random() * Math.PI * 2,
+        wigSpeed: 0.05 + Math.random() * 0.04,
+        thick: 4.5 + Math.random() * 1.8,
+        curve: (Math.random() - 0.5) * 1.6,
+        curveTarget: (Math.random() - 0.5) * 1.6
+      });
+    }
+
+    // メイン: 触手で「指の位置」へ伸びる
+    this.reachActive = false;
+    this.reachX = 0; this.reachY = 0;
+    this.reachTentIdx = 0;
+
+    // 背景: タップ時のアクション
+    this.actions = [];
+    this.actYOffset = 0;
+    this.actScale = 1;
+    this.actRot = 0;
+    this.actTentBoost = null;
+
+    // true: 常時wiggle、false: アクション時のみ動く (背景うに用)
+    this.idleMotion = true;
+  }
+
+  setTarget(x, y) { this.tx = x; this.ty = y; }
+
+  reach(targetX, targetY) {
+    this.reachActive = true;
+    this.reachX = targetX;
+    this.reachY = targetY;
+    const dx = targetX - this.x;
+    const dy = targetY - this.y;
+    if (Math.hypot(dx, dy) < 1) return;
+    let ang = Math.atan2(dy, dx);
+    if (ang < 0) ang += Math.PI * 2;
+    let bestI = 0, bestD = Infinity;
+    for (let i = 0; i < this.tentacles.length; i++) {
+      let d = Math.abs(this.tentacles[i].baseAngle - ang);
+      if (d > Math.PI) d = Math.PI * 2 - d;
+      if (d < bestD) { bestD = d; bestI = i; }
+    }
+    this.reachTentIdx = bestI;
+  }
+  unreach() { this.reachActive = false; }
+
+  triggerActions() {
+    const all = ['jump', 'tentacle', 'rotate', 'scale'];
+    const pool = all.slice();
+    const a1 = pool.splice((Math.random() * pool.length) | 0, 1)[0];
+    const a2 = pool.splice((Math.random() * pool.length) | 0, 1)[0];
+    const dur = 0.65 + Math.random() * 0.25;
+    this.actions = [this._buildAction(a1, dur), this._buildAction(a2, dur)];
+  }
+  _buildAction(type, dur) {
+    const a = { type: type, time: 0, duration: dur };
+    if (type === 'tentacle') a.tentIdx = (Math.random() * this.tentacles.length) | 0;
+    if (type === 'rotate')   a.dir = Math.random() < 0.5 ? 1 : -1;
+    return a;
+  }
+  isPlayingActions() { return this.actions.length > 0; }
+
+  update(dt) {
+    const bodyRate = 1 - Math.exp(-12 * dt);
+    this.x += (this.tx - this.x) * bodyRate;
+    this.y += (this.ty - this.y) * bodyRate;
+    this.scale += (this.scaleTarget - this.scale) * bodyRate;
+
+    const tentRate = 1 - Math.exp(-15 * dt);
+    for (const t of this.tentacles) {
+      if (this.idleMotion) {
+        t.wig += t.wigSpeed * (dt * 60);
+        t.len += (t.lenTarget - t.len) * tentRate;
+        if (Math.random() < 0.015) t.curveTarget = (Math.random() - 0.5) * 1.6;
+        t.curve += (t.curveTarget - t.curve) * (1 - Math.exp(-4 * dt));
+      }
+    }
+
+    this.actYOffset = 0;
+    this.actScale = 1;
+    this.actRot = 0;
+    this.actTentBoost = null;
+    for (let i = this.actions.length - 1; i >= 0; i--) {
+      const a = this.actions[i];
+      a.time += dt;
+      const t = a.time / a.duration;
+      if (t >= 1) { this.actions.splice(i, 1); continue; }
+      switch (a.type) {
+        case 'jump':
+          this.actYOffset = -50 * Math.sin(Math.PI * t); break;
+        case 'tentacle':
+          this.actTentBoost = { idx: a.tentIdx, mult: 1 + 1.0 * Math.sin(Math.PI * t) }; break;
+        case 'rotate':
+          this.actRot = Math.PI * 2 * t * a.dir; break;
+        case 'scale':
+          this.actScale = 1 + 0.4 * Math.sin(Math.PI * t); break;
+      }
+    }
+  }
+
+  draw(c) {
+    c.save();
+    const drawX = this.x;
+    const drawY = this.y + this.actYOffset;
+    const drawScale = this.scale * this.actScale;
+    const drawRot = this.actRot;
+
+    c.translate(drawX, drawY);
+    if (drawRot !== 0) c.rotate(drawRot);
+    c.scale(drawScale, drawScale);
+
+    for (let i = 0; i < this.tentacles.length; i++) {
+      const t = this.tentacles[i];
+      const isReach = this.reachActive && i === this.reachTentIdx;
+
+      let angle, len;
+      if (isReach) {
+        // canvas絶対座標 → ローカル(回転・スケール後)へ
+        const lx0 = this.reachX - drawX;
+        const ly0 = this.reachY - drawY;
+        const cs = Math.cos(-drawRot), sn = Math.sin(-drawRot);
+        const lx = (lx0 * cs - ly0 * sn) / drawScale;
+        const ly = (lx0 * sn + ly0 * cs) / drawScale;
+        angle = Math.atan2(ly, lx);
+        len = Math.hypot(lx, ly);
+      } else {
+        angle = this.idleMotion
+          ? t.baseAngle + Math.sin(t.wig) * 0.18
+          : t.baseAngle;
+        len = this.idleMotion
+          ? t.len + Math.sin(t.wig * 1.4) * 3
+          : t.baseLen;
+      }
+      if (this.actTentBoost && this.actTentBoost.idx === i) {
+        len *= this.actTentBoost.mult;
+      }
+
+      const ex = Math.cos(angle) * len;
+      const ey = Math.sin(angle) * len;
+      const perp = angle + Math.PI / 2;
+      const cAmt = this.idleMotion
+        ? (isReach ? 0 : t.curve * 6) + Math.sin(t.wig * 0.7) * 4
+        : 0;
+      const cx = Math.cos(angle) * len * 0.5 + Math.cos(perp) * cAmt;
+      const cy = Math.sin(angle) * len * 0.5 + Math.sin(perp) * cAmt;
+
+      c.strokeStyle = isReach ? '#b85a3e' : '#d97757';
+      c.lineWidth = t.thick;
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.quadraticCurveTo(cx, cy, ex, ey);
+      c.stroke();
+
+      c.fillStyle = isReach ? '#b85a3e' : '#d97757';
+      c.beginPath();
+      c.arc(ex, ey, t.thick * 0.42, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.restore();
+  }
+
+  hitTest(px, py) {
+    const r = 50 * this.baseScale;
+    return Math.hypot(px - this.x, py - this.y) < r;
+  }
+}
+
+/* ============================================================
+   PARTICLES
+   ============================================================ */
+const sparkles = [];
+const droplets = [];
+
+function spawnSparkles(cx, cy, count) {
+  count = count || 16;
+  for (let i = 0; i < count; i++) {
+    const ang = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+    const speed = 110 + Math.random() * 110;
+    sparkles.push({
+      x: cx, y: cy,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed - 30,
+      life: 1, size: 4 + Math.random() * 5,
+      rot: Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 6
+    });
+  }
+}
+function spawnDroplet(x, y) {
+  droplets.push({
+    x: x, y: y,
+    vx: (Math.random() - 0.5) * 30,
+    vy: 20 + Math.random() * 40,
+    life: 1, size: 2 + Math.random() * 2.5
+  });
+}
+function spawnHit(x, y) {
+  for (let i = 0; i < 6; i++) {
+    const ang = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+    const speed = 60 + Math.random() * 40;
+    sparkles.push({
+      x: x, y: y,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed,
+      life: 0.7, size: 3 + Math.random() * 2,
+      rot: Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 4
+    });
+  }
+}
+
+/* インクをマスク内に塗る: 前の点→今の点の間を太い線で結び、
+   offCanvas (現在の文字グリフ) と destination-in 合成して
+   実際の文字形状にだけインクが残るようにする */
+function paintInkSegment(fromMask, toMask) {
+  if (!state.drawnInk) return;
+  const ink = state.drawnInk.getContext('2d');
+  ink.save();
+  ink.globalCompositeOperation = 'source-over';
+  ink.fillStyle = '#2a2118';
+  ink.strokeStyle = '#2a2118';
+  ink.lineWidth = 42;
+  ink.lineCap = 'round';
+  ink.lineJoin = 'round';
+  if (fromMask) {
+    ink.beginPath();
+    ink.moveTo(fromMask.x, fromMask.y);
+    ink.lineTo(toMask.x, toMask.y);
+    ink.stroke();
+  }
+  // 端点を確実にカバー
+  ink.beginPath();
+  ink.arc(toMask.x, toMask.y, 22, 0, Math.PI * 2);
+  ink.fill();
+  // 文字形状にクリップ
+  ink.globalCompositeOperation = 'destination-in';
+  ink.drawImage(offCanvas, 0, 0);
+  ink.restore();
+}
+function updateParticles(dt) {
+  for (let i = sparkles.length - 1; i >= 0; i--) {
+    const s = sparkles[i];
+    s.x += s.vx * dt; s.y += s.vy * dt;
+    s.vx *= 0.93; s.vy = s.vy * 0.93 + 220 * dt;
+    s.rot += s.rotSpd * dt;
+    s.life -= dt * 1.0;
+    if (s.life <= 0) sparkles.splice(i, 1);
+  }
+  for (let i = droplets.length - 1; i >= 0; i--) {
+    const d = droplets[i];
+    d.x += d.vx * dt; d.y += d.vy * dt;
+    d.vy += 360 * dt;
+    d.life -= dt * 1.6;
+    if (d.life <= 0) droplets.splice(i, 1);
+  }
+}
+function drawParticles(c) {
+  for (const s of sparkles) {
+    const a = Math.max(0, Math.min(1, s.life));
+    c.save();
+    c.translate(s.x, s.y);
+    c.rotate(s.rot);
+    c.globalAlpha = a;
+    c.strokeStyle = '#d97757';
+    c.lineWidth = 2.2; c.lineCap = 'round';
+    const r = s.size * (0.4 + a * 0.9);
+    c.beginPath();
+    c.moveTo(-r, 0); c.lineTo(r, 0);
+    c.moveTo(0, -r); c.lineTo(0, r);
+    const r2 = r * 0.55;
+    c.moveTo(-r2, -r2); c.lineTo(r2, r2);
+    c.moveTo(r2, -r2); c.lineTo(-r2, r2);
+    c.stroke();
+    c.restore();
+  }
+  for (const d of droplets) {
+    c.save();
+    c.globalAlpha = Math.max(0, d.life) * 0.7;
+    c.fillStyle = '#2a2118';
+    c.beginPath();
+    c.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  }
+}
+
+/* ============================================================
+   POINTER
+   ============================================================ */
+const pointer = { x: 0, y: 0, active: false };
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX !== undefined) ? e.clientX
+    : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  const cy = (e.clientY !== undefined) ? e.clientY
+    : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+  return { x: cx - rect.left, y: cy - rect.top };
+}
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+const state = {
+  word: '',
+  charIdx: 0,
+  drawnInk: null,          // 220x220: なぞり済みインク
+  lastPaintMask: null,     // 直前のペイント座標 (マスク空間)
+  drawnSomething: false,   // 何か描いたか
+  charCenter: { x: 0, y: 0 },
+  charScale: 1,
+  charScaleTarget: 1,
+  charCenterTarget: { x: 0, y: 0 },
+  state: 'idle',           // idle | tracing | completing | speaking | done
+  completionTimer: 0,
+  completedInks: [],       // 完成した各文字のインクキャンバス
+  completedMasks: [],      // 完成した各文字のマスク (offCanvasのコピー)
+  showBigWord: false       // 単語完成時の中央大表示フラグ
+};
+
+const mainUni = new Uni(0, 0, 1.0);
+const bgUnis = [
+  new Uni(0, 0, 0.55),
+  new Uni(0, 0, 0.55),
+  new Uni(0, 0, 0.55)
+];
+bgUnis.forEach(u => { u.idleMotion = false; });
+function repositionBgUnis() {
+  if (W === 0) return;
+  // メインうにが上中央にいるので、背景うには下半分に配置
+  bgUnis[0].x = bgUnis[0].tx = W * 0.12;
+  bgUnis[0].y = bgUnis[0].ty = H * 0.86;
+  bgUnis[1].x = bgUnis[1].tx = W * 0.88;
+  bgUnis[1].y = bgUnis[1].ty = H * 0.86;
+  bgUnis[2].x = bgUnis[2].tx = W * 0.50;
+  bgUnis[2].y = bgUnis[2].ty = H * 0.93;
+}
+
+function pickRandomWord() {
+  const pool = wordsByCategory[currentMode] && wordsByCategory[currentMode].length
+    ? wordsByCategory[currentMode] : WORDS;
+  let pick = pool[(Math.random() * pool.length) | 0];
+  if (pool.length > 1) {
+    let safety = 8;
+    while (pick === lastPickedWord && safety-- > 0) {
+      pick = pool[(Math.random() * pool.length) | 0];
+    }
+  }
+  lastPickedWord = pick;
+  return pick;
+}
+
+function renderWordRow(allDone) {
+  const row = document.getElementById('wordRow');
+  row.innerHTML = '';
+  for (let i = 0; i < state.word.length; i++) {
+    const span = document.createElement('span');
+    span.className = 'word-char';
+    if (allDone) span.classList.add('done');
+    else if (i < state.charIdx) span.classList.add('done');
+    else if (i === state.charIdx) span.classList.add('active');
+    span.textContent = state.word[i];
+    row.appendChild(span);
+  }
+}
+
+function maskToCanvas(mx, my) {
+  return {
+    x: state.charCenter.x + (mx - MASK_SIZE / 2) * state.charScale,
+    y: state.charCenter.y + (my - MASK_SIZE / 2) * state.charScale
+  };
+}
+
+function updateHint(text) {
+  const h = document.getElementById('hint');
+  if (h.textContent !== text) h.textContent = text;
+}
+
+function startNewWord() {
+  state.word = pickRandomWord();
+  state.charIdx = 0;
+  state.completedInks = [];
+  state.completedMasks = [];
+  state.showBigWord = false;
+  renderWordRow();
+  prepareCurrentChar();
+  state.state = 'tracing';
+  updateHint('じゆうに なぞってね！');
+}
+
+function prepareCurrentChar() {
+  const ch = state.word[state.charIdx];
+  buildCharMask(ch);
+  state.drawnSomething = false;
+  state.lastPaintMask = null;
+  // 文字ごとに新しい drawnInk を用意 (willReadFrequently でgetImageDataを高速化)
+  const inkCanvas = document.createElement('canvas');
+  inkCanvas.width = MASK_SIZE; inkCanvas.height = MASK_SIZE;
+  inkCanvas.getContext('2d', { willReadFrequently: true });
+  state.drawnInk = inkCanvas;
+
+  const center = { x: W / 2, y: H * 0.55 };
+  const scale = (Math.min(W, H) * 0.58) / MASK_SIZE;
+  state.charCenterTarget = center;
+  state.charScaleTarget = scale;
+  if (state.charIdx === 0) {
+    state.charCenter = { x: center.x, y: center.y };
+    state.charScale = scale;
+  }
+  // メインうに: キャンバス中央上部に配置
+  mainUni.setTarget(W * 0.50, H * 0.13);
+  if (state.charIdx === 0) { mainUni.x = mainUni.tx; mainUni.y = mainUni.ty; }
+}
+
+function completeCurrentChar() {
+  stopUniLoop();
+  // 現在の文字のインクとマスクを保存しておく
+  if (state.drawnInk) {
+    const inkCopy = document.createElement('canvas');
+    inkCopy.width = MASK_SIZE; inkCopy.height = MASK_SIZE;
+    inkCopy.getContext('2d').drawImage(state.drawnInk, 0, 0);
+    state.completedInks.push(inkCopy);
+
+    const maskCopy = document.createElement('canvas');
+    maskCopy.width = MASK_SIZE; maskCopy.height = MASK_SIZE;
+    maskCopy.getContext('2d').drawImage(offCanvas, 0, 0);
+    state.completedMasks.push(maskCopy);
+  }
+
+  state.charIdx++;
+  if (state.charIdx >= state.word.length) {
+    state.state = 'completing';
+    state.completionTimer = 0;
+    state.showBigWord = true;
+    spawnSparkles(W / 2, H * 0.55, 18);
+    // 全文字をdoneにしてから speaking クラスを付与
+    renderWordRow(true);
+    document.getElementById('wordRow').classList.add('speaking');
+    mainUni.unreach();
+    updateHint('よみあげちゅう...');
+  } else {
+    renderWordRow();
+    prepareCurrentChar();
+  }
+}
+
+// 単語行内の文字spanを取得するユーティリティ
+function getWordChars() {
+  return document.getElementById('wordRow').querySelectorAll('.word-char');
+}
+function highlightChar(idx) {
+  const chars = getWordChars();
+  for (let i = 0; i < chars.length; i++) {
+    chars[i].classList.remove('now-speaking');
+    if (i === idx) {
+      // CSS animationを再起動するためにreflowを挟む
+      void chars[i].offsetWidth;
+      chars[i].classList.add('now-speaking');
+    }
+  }
+}
+function clearHighlight() {
+  const chars = getWordChars();
+  chars.forEach(c => c.classList.remove('now-speaking'));
+}
+
+/* ============================================================
+   FREEHAND PAINT  (canvas座標 → マスク座標 → drawnInkに塗る)
+   ============================================================ */
+function paintFreehand(canvasX, canvasY) {
+  if (!state.drawnInk) return;
+  const mx = (canvasX - state.charCenter.x) / state.charScale + MASK_SIZE / 2;
+  const my = (canvasY - state.charCenter.y) / state.charScale + MASK_SIZE / 2;
+
+  const ink = state.drawnInk.getContext('2d');
+  ink.save();
+  ink.globalCompositeOperation = 'source-over';
+  ink.fillStyle = '#2a2118';
+  ink.strokeStyle = '#2a2118';
+  ink.lineWidth = 42;
+  ink.lineCap = 'round';
+  ink.lineJoin = 'round';
+
+  if (state.lastPaintMask) {
+    ink.beginPath();
+    ink.moveTo(state.lastPaintMask.x, state.lastPaintMask.y);
+    ink.lineTo(mx, my);
+    ink.stroke();
+  }
+  ink.beginPath();
+  ink.arc(mx, my, 22, 0, Math.PI * 2);
+  ink.fill();
+
+  // 文字マスクにクリップ
+  ink.globalCompositeOperation = 'destination-in';
+  ink.drawImage(offCanvas, 0, 0);
+  ink.restore();
+
+  state.lastPaintMask = { x: mx, y: my };
+  state.drawnSomething = true;
+}
+
+/* ============================================================
+   COVERAGE CHECK  (drawnInk の塗り率を計算)
+   ============================================================ */
+function getCoverage() {
+  if (!state.drawnInk || totalMaskPixels === 0) return 0;
+  const d = state.drawnInk.getContext('2d', { willReadFrequently: true })
+                           .getImageData(0, 0, MASK_SIZE, MASK_SIZE).data;
+  let painted = 0;
+  for (let i = 3; i < d.length; i += 4) { if (d[i] > 128) painted++; }
+  return painted / totalMaskPixels;
+}
+
+let coverageTimer = 0;
+const COVERAGE_CHECK_INTERVAL = 0.4; // ペイント中のチェック間隔(秒)
+const COVERAGE_FULL = 0.99;          // 100%近く塗ったら自動完了
+const COVERAGE_LIFTED = 0.90;        // 指を離した瞬間に90%以上なら完了
+
+function updateTracing(dt) {
+  if (state.state !== 'tracing') return;
+
+  if (pointer.active) {
+    paintFreehand(pointer.x, pointer.y);
+    mainUni.reach(pointer.x, pointer.y);
+    if (Math.random() < 0.06) spawnDroplet(pointer.x, pointer.y + 4);
+    startUniLoop();
+
+    // 塗り100%チェック (頻度を絞る)
+    if (state.drawnSomething) {
+      coverageTimer += dt;
+      if (coverageTimer >= COVERAGE_CHECK_INTERVAL) {
+        coverageTimer = 0;
+        if (getCoverage() >= COVERAGE_FULL) { completeCurrentChar(); return; }
+      }
+    }
+  } else {
+    mainUni.unreach();
+    stopUniLoop();
+  }
+}
+
+/* ============================================================
+   PATH RENDERING  (2レイヤー)
+   1. 文字ゴースト (薄く表示 — 形の手がかり)
+   2. drawnInk    (なぞった部分が文字マスクでクリップされて表示)
+   ============================================================ */
+function drawPath() {
+  if (!state.word) return;
+
+  // 単語完成時は全文字を中央に大きく並べる
+  if (state.showBigWord) {
+    drawBigWord();
+    return;
+  }
+  if (state.charIdx >= state.word.length) return;
+
+  const drawW = MASK_SIZE * state.charScale;
+  const drawH = MASK_SIZE * state.charScale;
+  const drawX = state.charCenter.x - drawW / 2;
+  const drawY = state.charCenter.y - drawH / 2;
+
+  // レイヤー1: 文字ゴースト
+  ctx.save();
+  ctx.globalAlpha = 0.10;
+  ctx.drawImage(offCanvas, drawX, drawY, drawW, drawH);
+  ctx.restore();
+
+  // レイヤー2: なぞり済みのインク
+  if (state.drawnInk) {
+    ctx.drawImage(state.drawnInk, drawX, drawY, drawW, drawH);
+  }
+}
+
+/* 単語完成時、全文字を中央に大きく並べる */
+function drawBigWord() {
+  const n = state.completedInks.length;
+  if (n === 0) return;
+
+  // キャンバスの利用可能領域: メインうに(上中央)と背景うに(下)を避ける
+  const sidePad = W * 0.06;
+  const usableW = W - sidePad * 2;
+  const usableH = H * 0.52;          // 上下のうにを避けて中段の幅
+
+  // 文字サイズ: 横幅とキャンバス高さの両方に収まるように
+  const slotByWidth = usableW / n;
+  const slotByHeight = usableH;
+  const slot = Math.min(slotByWidth, slotByHeight);
+  const drawSize = slot * 0.96;
+
+  const totalW = slot * n;
+  const startX = sidePad + (usableW - totalW) / 2;
+  const cy = H * 0.55;
+
+  for (let i = 0; i < n; i++) {
+    const cx = startX + slot * (i + 0.5);
+    const dx = cx - drawSize / 2;
+    const dy = cy - drawSize / 2;
+    // ほのかに残るゴースト
+    ctx.save();
+    ctx.globalAlpha = 0.08;
+    ctx.drawImage(state.completedMasks[i], dx, dy, drawSize, drawSize);
+    ctx.restore();
+    // インク
+    ctx.drawImage(state.completedInks[i], dx, dy, drawSize, drawSize);
+  }
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+let lastTime = 0;
+function tick(t) {
+  const dt = lastTime ? Math.min(0.05, (t - lastTime) / 1000) : 0.016;
+  lastTime = t;
+  const time = t / 1000;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 背景うに
+  for (const bu of bgUnis) {
+    bu.update(dt);
+    bu.draw(ctx);
+  }
+
+  // パーティクル(背景レイヤ)
+  updateParticles(dt);
+  drawParticles(ctx);
+
+  // パス描画
+  drawPath();
+
+  // メインうに
+  if (state.state === 'tracing') updateTracing(dt);
+  mainUni.update(dt);
+  if (state.state === 'tracing') mainUni.draw(ctx);
+
+  // 完了演出 → 読み上げ
+  if (state.state === 'completing') {
+    state.completionTimer += dt;
+    if (state.completionTimer > 0.6) {
+      state.state = 'speaking';
+      const word = state.word;
+      const wordLen = word.length;
+      let speechStart = 0;
+      let highlightTimers = [];
+      let usedBoundary = false;
+
+      const scheduleEqualHighlights = () => {
+        // boundary が来ない環境向けのフォールバック: 等間隔
+        // rate=0.85 なので、おおよそ1モーラあたり ~280ms
+        const perChar = 280;
+        for (let i = 0; i < wordLen; i++) {
+          highlightTimers.push(setTimeout(() => {
+            if (state.state === 'speaking') highlightChar(i);
+          }, i * perChar));
+        }
+      };
+
+      speakWord(word, {
+        onStart: () => {
+          speechStart = performance.now();
+          // 最初の文字をすぐ点灯
+          if (state.state === 'speaking') highlightChar(0);
+          // boundaryが来るブラウザはこの後上書きされる
+          // 来ない場合のために少し遅らせて等間隔をスケジュール
+          setTimeout(() => {
+            if (!usedBoundary && state.state === 'speaking') {
+              // 等間隔の残り文字 (1文字目はもう点灯済み)
+              const perChar = 280;
+              for (let i = 1; i < wordLen; i++) {
+                highlightTimers.push(setTimeout(() => {
+                  if (state.state === 'speaking') highlightChar(i);
+                }, (i - 1) * perChar));
+              }
+            }
+          }, 100);
+        },
+        onBoundary: (charIndex) => {
+          usedBoundary = true;
+          // 既存の等間隔スケジュールをキャンセル
+          highlightTimers.forEach(id => clearTimeout(id));
+          highlightTimers = [];
+          if (state.state === 'speaking' && charIndex >= 0 && charIndex < wordLen) {
+            highlightChar(charIndex);
+          }
+        },
+        onComplete: () => {
+          highlightTimers.forEach(id => clearTimeout(id));
+          highlightTimers = [];
+          if (state.state === 'speaking') {
+            state.state = 'done';
+            document.getElementById('wordRow').classList.remove('speaking');
+            clearHighlight();
+            updateHint('タップで つぎへ');
+          }
+        }
+      });
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   POINTER EVENTS
+   ============================================================ */
+function onPointerDown(e) {
+  e.preventDefault();
+  ensureAudio();
+  const pos = getCanvasPos(e);
+  pointer.x = pos.x; pointer.y = pos.y;
+  pointer.active = true;
+  // 新しい一筆: ペイントの連結を切る
+  state.lastPaintMask = null;
+
+  // 背景うに ヒット判定
+  for (const bu of bgUnis) {
+    if (bu.hitTest(pos.x, pos.y) && !bu.isPlayingActions()) {
+      bu.triggerActions();
+      playUni(40);
+      return;
+    }
+  }
+
+  // 完成 → 次の単語
+  if (state.state === 'done') {
+    startNewWord();
+  } else if (state.state === 'speaking' || state.state === 'completing') {
+    speechSynthesis.cancel();
+    stopUniLoop();
+    document.getElementById('wordRow').classList.remove('speaking');
+    state.state = 'done';
+    setTimeout(() => startNewWord(), 30);
+  }
+}
+function onPointerMove(e) {
+  if (!pointer.active) return;
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  pointer.x = pos.x; pointer.y = pos.y;
+}
+function onPointerUp(e) {
+  pointer.active = false;
+  // 指を離した瞬間に90%以上塗れていたら即進行
+  if (state.state === 'tracing' && state.drawnSomething) {
+    if (getCoverage() >= COVERAGE_LIFTED) {
+      completeCurrentChar();
+    }
+  }
+}
+
+canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+canvas.addEventListener('pointerup', onPointerUp, { passive: false });
+canvas.addEventListener('pointercancel', onPointerUp, { passive: false });
+canvas.addEventListener('pointerleave', onPointerUp, { passive: false });
+
+// ── スクロール伝播防止 ──────────────────────────────────────
+// iOS Safari / Android は touchmove がデフォルトでスクロールを起こし、
+// iframe の場合は親ウィンドウまで伝播する。
+// { passive: false } にしないと preventDefault() が無視されるので注意。
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+}, { passive: false });
+
+// touchstart も防いでおくと iOS の「引っ張り更新」を止められる
+document.addEventListener('touchstart', (e) => {
+  // モードボタンやスタートボタンは通常通り (クリック合成は妨げない)
+  if (!e.target.closest('button')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (state.state === 'done') startNewWord();
+  }
+});
+
+// モード切替
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  const handler = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    if (state.state === 'done' || state.state === 'speaking' || state.state === 'idle') {
+      ensureAudio();
+      speechSynthesis.cancel();
+      document.getElementById('wordRow').classList.remove('speaking');
+      if (state.state !== 'idle') startNewWord();
+    }
+  };
+  btn.addEventListener('click', handler);
+});
+
+/* ============================================================
+   START
+   ============================================================ */
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+
+function begin() {
+  ensureAudio();
+  speechSynthesis.getVoices();
+  startOverlay.classList.add('hidden');
+  resize();
+  const start = () => { resize(); startNewWord(); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start);
+  else start();
+}
+startBtn.addEventListener('click', begin);
+startOverlay.addEventListener('click', (e) => { if (e.target === startOverlay) begin(); });
+
+resize();
+requestAnimationFrame(tick);
+
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => {};
+}
+</script>
+</body>
+</html>
