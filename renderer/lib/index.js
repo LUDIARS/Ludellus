@@ -8,3 +8,5 @@ export * from "./voice.js";
 export * from "./sound.js";
 export * from "./mobile.js";
 export * from "./render.js";
+export * from "./scene.js";
+export * from "./scene-manager.js";
