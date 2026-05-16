@@ -102,18 +102,20 @@ foundation 完成        + Cernere auth + sync     Pictor で render            
 
 ### Phase 2: Capacitor + Pictor WebGL2 backend で Android / iOS 配布
 
-- `@capacitor/core` + `@capacitor/android` + `@capacitor/ios`
-- 既存 `renderer/` を `capacitor.config.json` の `webDir` に向ける
-- `renderer/` を CDN (Cloudflare Pages) に置き、 Capacitor は **WebView の `serverUrl` をその CDN に向ける** ことで OTA 化 (Apple 規約: HTML/CSS/JS の更新は許容範囲)
-- `Capacitor.Preferences` / `Capacitor.Filesystem` でローカルデータ強化 (localStorage は WebView 単位で消える可能性あるため)
-- **Pictor は Emscripten ビルドの WebGL2 backend を WASM として同梱** ([`PICTOR.md`](./PICTOR.md) Phase 3〜4)
-- 必要プラグイン:
+- **scaffold 完了 (PR #14)** — `capacitor.config.json` + `package.json` に必要プラグイン依存追加
+- 既存 `renderer/` を `capacitor.config.json` の `webDir` に向け済
+- 必要プラグイン (依存追加済):
   - **Haptics** — 正解時のバイブ
   - **Status Bar** — クリーム色テーマに合わせる
   - **App** — バックグラウンド復帰時の monitor 制御
   - **Screen Orientation** — 縦持ちロック
-- ビルド: `npx cap sync && npx cap open android|ios`
-- **コスト目安:** 2〜4 週
+  - **Splash Screen / Preferences** — UI ライフサイクル
+- 残作業 (native toolchain 必要、 ユーザ側で実施):
+  - `npm install`
+  - `npm run cap:init` (Android Studio + Xcode の SDK 設定が必要)
+  - `npm run cap:sync && npm run cap:android` または `cap:ios`
+- **Pictor は Emscripten ビルドの WebGL2 backend を WASM として同梱** ([`PICTOR.md`](./PICTOR.md) Phase 3〜4)
+- OTA: `renderer/` を CDN (Cloudflare Pages) に置き、 Capacitor の `server.url` をその CDN に向ければ HTML/CSS/JS 更新は store 再申請なしで反映可
 
 ### Phase 3: Native Pictor plugin (高速化)
 
