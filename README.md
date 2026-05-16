@@ -26,13 +26,14 @@ npm start
 
 ## データ取り扱い方針
 
+**ローカル専用アプリ**。 外部サービス連携なし、 認証なし、 ネットワーク送信なし。
 LUDIARS の個人データ保管禁止ルール (AIFormat §5) に従い、 raw な keystroke / 座標履歴は
-**ローカルでも永続化しない**。 main/monitor は 5 秒窓ごとに集計メトリクス (押下数 / 移動量 / idle 時間 等) のみ
-emit し、 必要に応じて Memoria / Cernere に転送する。 raw stream は process memory にだけ存在する。
+ローカルでも永続化しない。 main/monitor は 5 秒窓ごとに集計メトリクス (押下数 / 移動量 / idle 時間 等) のみ
+emit し、 process memory にだけ保持する。
 
 ## 次の TODO
 
 - Foundation UI を LUDIARS/Foundation の token に置換 (現在は最小サブセット)
-- Cernere 認証 + per-user `/api/auth/project-token` で監視メトリクスを Memoria に送信
-- Excubitor ヘルスチェック登録
-- LUDIARS/PROJECT-CODES.md に 2 文字略称を提案 (Ul / UL 候補)
+- 集計メトリクスのローカル永続化 (集計値のみ・ raw stream は引き続き保存しない)
+- 集中度推定 (idle / 入力速度の変動)、 セッションリプレイ
+- Curare の知育コンテンツ pack 連携
