@@ -16,7 +16,8 @@ export class UniWritingScene extends Scene {
   enter() {
     const wrap = this.ctx.canvas.parentElement;
     this.iframe = document.createElement("iframe");
-    this.iframe.src = "../sample/uni-writing-game.html";
+    // 原本を games/uni-writing/index.html に移植済 (sample/ は引き続きリファレンスとして温存)
+    this.iframe.src = "games/uni-writing/index.html";
     this.iframe.style.cssText = [
       "position:absolute",
       "inset:0",
