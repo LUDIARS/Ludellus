@@ -2,8 +2,13 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="theme-color" content="#f7f1e8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:; manifest-src 'self';" />
     <title>UniLand</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="icons/uni-icon.svg" />
     <link rel="stylesheet" href="styles/foundation.css" />
     <link rel="stylesheet" href="styles/app.css" />
   </head>
@@ -28,5 +33,13 @@
       </section>
     </main>
     <script type="module" src="../dist/renderer/app.js"></script>
+    <script>
+      // PWA service worker 登録。 Electron / http(s) でのみ動く (file:// では skip)。
+      if ("serviceWorker" in navigator && (location.protocol === "http:" || location.protocol === "https:")) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("sw.js", { scope: "./" }).catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

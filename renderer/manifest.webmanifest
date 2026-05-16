@@ -1,0 +1,33 @@
+{
+  "name": "UniLand",
+  "short_name": "UniLand",
+  "description": "うにと いっしょに もじや けいさんを おぼえよう",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f1e8",
+  "theme_color": "#f7f1e8",
+  "lang": "ja",
+  "categories": ["education", "kids"],
+  "icons": [
+    {
+      "src": "./icons/uni-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/uni-icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/uni-icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
