@@ -21,6 +21,7 @@ import { UniTapScene } from "./games/uni-tap/scene.js";
 import { UniRainScene } from "./games/uni-rain/scene.js";
 import { UniLauncherScene } from "./games/uni-launcher/scene.js";
 import { UniMathScene } from "./games/uni-math/scene.js";
+import { UniSuikaScene } from "./games/uni-suika/scene.js";
 
 // ── DOM ───────────────────────────────────────────
 const canvas = document.getElementById("game");
@@ -81,6 +82,7 @@ manager.register(UniTapScene);
 manager.register(UniRainScene);
 manager.register(UniLauncherScene);
 manager.register(UniMathScene);
+manager.register(UniSuikaScene);
 
 // ── 切替 chip UI ─────────────────────────────────
 function renderSwitcher() {
