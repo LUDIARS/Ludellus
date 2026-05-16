@@ -1,6 +1,6 @@
 {
-  "name": "UniLand",
-  "short_name": "UniLand",
+  "name": "Ludellus",
+  "short_name": "Ludellus",
   "description": "うにと いっしょに もじや けいさんを おぼえよう",
   "start_url": "./index.html",
   "scope": "./",

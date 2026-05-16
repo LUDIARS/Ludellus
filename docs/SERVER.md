@@ -1,6 +1,6 @@
-# UniLand サーバアーキテクチャ
+# Ludellus サーバアーキテクチャ
 
-ユーザ指示で「中央 Web は自由に決めれる」 + 「3 つの統合 (UniLand standalone server + Cernere 認証 + Memoria 学習活動) は全部やる」 となったため、 競合しない形で 3 サービスを並走させる構成。
+ユーザ指示で「中央 Web は自由に決めれる」 + 「3 つの統合 (Ludellus standalone server + Cernere 認証 + Memoria 学習活動) は全部やる」 となったため、 競合しない形で 3 サービスを並走させる構成。
 
 ## 全体像
 
@@ -10,17 +10,17 @@
 │        WebView / renderer/ + Pictor (WASM or 直 Vulkan)       │
 └──────────────────────────────────────────────────────────────┘
        │                          │                       │
-       │ Cernere PASETO            │ UniLand REST           │ Memoria REST
+       │ Cernere PASETO            │ Ludellus REST           │ Memoria REST
        ▼                          ▼                       ▼
 ┌──────────────┐         ┌──────────────────┐    ┌───────────────────┐
-│   Cernere    │←sub────│ UniLand サーバ      │───→│     Memoria       │
+│   Cernere    │←sub────│ Ludellus サーバ      │───→│     Memoria       │
 │   (大人 auth) │         │ (分岐 / score /     │    │ (学習活動の集計    │
 │              │         │  AI 改修 / 同期)    │    │  + 保護者レポート) │
 └──────────────┘         └──────────────────┘    └───────────────────┘
        │                          │                       │
        │ project-token (per-user) │ 自前 DB (Postgres)    │ Memoria DB
        ▼                          ▼                       ▼
-   [ Cernere DB ]            [ UniLand DB ]           [ Memoria DB ]
+   [ Cernere DB ]            [ Ludellus DB ]           [ Memoria DB ]
 ```
 
 ## サービス境界 (誰が何を持つか)
@@ -28,22 +28,22 @@
 | データ | 持ち主 | 理由 |
 |---|---|---|
 | **大人ユーザ identity** (保護者・教師) | Cernere | LUDIARS 共通の認証単一情報源 ([[project_personal_data_rule]] 準拠) |
-| **子供プロファイル** (うにの名前・お気に入り色等) | UniLand | 子供の個人情報は最小、 親アカウント配下にぶら下げる |
-| **スコア / 分岐ツリー / AI 改修履歴** | UniLand | ゲーム固有データ、 他サービスから参照されない |
+| **子供プロファイル** (うにの名前・お気に入り色等) | Ludellus | 子供の個人情報は最小、 親アカウント配下にぶら下げる |
+| **スコア / 分岐ツリー / AI 改修履歴** | Ludellus | ゲーム固有データ、 他サービスから参照されない |
 | **学習活動ログ** (どの単元をいつ何分やった等) | Memoria | Memoria の活動トラッキング設計に乗る、 保護者レポートは Memoria が責任 |
-| **学習指導要領マップ + 単元定義** | UniLand (spec/) | 教育コンテンツ固有、 静的データ |
+| **学習指導要領マップ + 単元定義** | Ludellus (spec/) | 教育コンテンツ固有、 静的データ |
 | **音声合成キャッシュ・モックアップアセット** | クライアント (localStorage / CDN) | サーバ持ち回さない |
 
 ### Cernere との連携
 
 - 親が Cernere で SSO ログイン (PASETO トークン取得)
-- UniLand クライアントは Cernere の `/api/auth/project-token` で per-user × per-project トークンを取得 ([[feedback_secret_per_user_memory_only]])
-- UniLand サーバは Cernere PASETO 公開鍵を起動時 fetch、 受け取った token の `sub` (= ユーザ ID) を検証
+- Ludellus クライアントは Cernere の `/api/auth/project-token` で per-user × per-project トークンを取得 ([[feedback_secret_per_user_memory_only]])
+- Ludellus サーバは Cernere PASETO 公開鍵を起動時 fetch、 受け取った token の `sub` (= ユーザ ID) を検証
 - **子供の auth はパスワードレス** — 親アカウント配下にぶら下がる「子供プロファイル ID」 のみ
   - 例: 親 user_id `usr_abc` の配下に child profile `child_xyz` がぶら下がる
   - 子供は端末を起動するだけ (親が初回設定したリンク済端末)、 端末 ID と child profile が紐付く
 
-### UniLand サーバ自前範囲
+### Ludellus サーバ自前範囲
 
 #### REST API (ドラフト)
 
@@ -64,13 +64,13 @@ POST   /api/v1/ai-mod                    # AI 改修リクエスト (Claude API 
 
 #### Memoria 通知
 
-- セッション終了時に UniLand サーバから Memoria の `/api/activities` (仮) に PUT
+- セッション終了時に Ludellus サーバから Memoria の `/api/activities` (仮) に PUT
 - スキーマ:
   ```json
   {
     "userId": "<親 user_id>",
     "childId": "<子供 profile id>",
-    "kind": "uniland.session",
+    "kind": "ludellus.session",
     "gameId": "uni-math",
     "mode": "easy",
     "score": 9,
@@ -104,15 +104,15 @@ POST   /api/v1/ai-mod                    # AI 改修リクエスト (Claude API 
 ```js
 // Phase 2:
 import { syncWithServer } from "../lib/score.js";
-await syncWithServer({ endpoint: "https://uniland.app/api/v1", token: pasetoToken });
+await syncWithServer({ endpoint: "https://ludellus.app/api/v1", token: pasetoToken });
 ```
 
 ## デプロイ構成 (案)
 
 | サービス | デプロイ先 | スケール |
 |---|---|---|
-| UniLand サーバ | Cloudflare Workers / Fly.io / Railway | 個人運用なら Workers が一番安い |
-| UniLand DB | Neon / Supabase Postgres | Memoria と論理分離した同一クラスタ可 |
+| Ludellus サーバ | Cloudflare Workers / Fly.io / Railway | 個人運用なら Workers が一番安い |
+| Ludellus DB | Neon / Supabase Postgres | Memoria と論理分離した同一クラスタ可 |
 | Cernere | LUDIARS 既存 | 統合のみ、 別管理 |
 | Memoria | LUDIARS 既存 | 統合のみ、 別管理 |
 | CDN (renderer 配信) | Cloudflare Pages / Vercel | OTA 用、 Capacitor が WebView から読む先 |
@@ -127,16 +127,16 @@ await syncWithServer({ endpoint: "https://uniland.app/api/v1", token: pasetoToke
 | **個人情報保護法** | 名前・誕生日等は子供プロファイルに任意、 デフォルト「うに」 + 色だけ |
 | **GDPR kids** | EU 配信時に親同意フロー (Cernere 側で対応) |
 | **Apple Kids カテゴリ** | 5 歳以下選択時は外部リンク/課金不可、 Cernere SSO は親側だけに表示 |
-| **データ最小化** | UniLand サーバには集計値のみ、 raw 入力 / 音声 / 画像は持たない |
+| **データ最小化** | Ludellus サーバには集計値のみ、 raw 入力 / 音声 / 画像は持たない |
 
 ## ロードマップ
 
 | Phase | 内容 | クライアント | サーバ |
 |---|---|---|---|
 | **0 (現状)** | foundation + scoring + samples | localStorage 単独 | なし |
-| **1** | UniLand サーバ MVP | sync フック追加 | プロファイル + スコア REST |
+| **1** | Ludellus サーバ MVP | sync フック追加 | プロファイル + スコア REST |
 | **2** | Cernere 統合 | 親 SSO 画面 | PASETO 検証 |
-| **3** | Memoria 通知 | (透過) | UniLand → Memoria PUT |
+| **3** | Memoria 通知 | (透過) | Ludellus → Memoria PUT |
 | **4** | AI 改修 (Claude API proxy) | 改修ボタン UI | `/api/v1/ai-mod` |
 | **5** | OTA (Cloudflare Pages から renderer 配信) | Capacitor + manifest | CDN |
 

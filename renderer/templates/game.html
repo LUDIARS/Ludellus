@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light only" />
     <meta name="supported-color-schemes" content="light" />
     <meta name="theme-color" content="#f7f1e8" />
-    <title>UniLand Game Template</title>
+    <title>Ludellus Game Template</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" />
     <link rel="stylesheet" href="../lib/theme.css" />
@@ -41,10 +41,10 @@
     </style>
   </head>
   <body>
-    <div id="stage" class="uniland-stage">
+    <div id="stage" class="ludellus-stage">
       <header class="stage-header">
         <div class="stage-title">🎓 ゲーム タイトル</div>
-        <div class="stage-progress uniland-progress" id="progress"></div>
+        <div class="stage-progress ludellus-progress" id="progress"></div>
       </header>
 
       <main class="stage-canvas-wrap">
@@ -52,12 +52,12 @@
       </main>
 
       <footer class="stage-footer">
-        <button class="uniland-btn" id="btnStart">▶ はじめる</button>
-        <button class="uniland-btn uniland-btn--ghost" id="btnReset">リセット</button>
+        <button class="ludellus-btn" id="btnStart">▶ はじめる</button>
+        <button class="ludellus-btn ludellus-btn--ghost" id="btnReset">リセット</button>
       </footer>
 
-      <div class="uniland-result" id="result" hidden>
-        <div class="uniland-result__text uniland-result__text--big" id="resultText">せいかい</div>
+      <div class="ludellus-result" id="result" hidden>
+        <div class="ludellus-result__text ludellus-result__text--big" id="resultText">せいかい</div>
       </div>
     </div>
 
@@ -101,7 +101,7 @@
         progress.innerHTML = "";
         for (let i = 0; i < TOTAL; i++) {
           const d = document.createElement("div");
-          d.className = "uniland-progress__dot";
+          d.className = "ludellus-progress__dot";
           if (i === current) d.classList.add("is-current");
           if (results[i] === "ok") d.classList.add("is-correct");
           if (results[i] === "ng") d.classList.add("is-wrong");
@@ -162,7 +162,7 @@
         for (const u of bgUnis) u.triggerActions(performance.now());
         speak("せいかい", { rate: 1.0 });
         resultText.textContent = "せいかい";
-        resultText.className = "uniland-result__text uniland-result__text--big";
+        resultText.className = "ludellus-result__text ludellus-result__text--big";
         result.hidden = false;
         setTimeout(() => { result.hidden = true; }, 3000);
       };

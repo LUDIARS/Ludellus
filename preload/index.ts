@@ -19,7 +19,7 @@ export interface MockupManifest {
   tags?: string[];
 }
 
-contextBridge.exposeInMainWorld("uniland", {
+contextBridge.exposeInMainWorld("ludellus", {
   listMockups: (): Promise<MockupManifest[]> => ipcRenderer.invoke("mockups:list"),
   startMonitor: (): Promise<{ ok: boolean; reason?: string }> => ipcRenderer.invoke("monitor:start"),
   stopMonitor: (): Promise<void> => ipcRenderer.invoke("monitor:stop"),

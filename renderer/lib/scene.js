@@ -1,7 +1,7 @@
-// UniLand Scene インターフェース。 ゲーム 1 つ = 1 つの Scene。
+// Ludellus Scene インターフェース。 ゲーム 1 つ = 1 つの Scene。
 // shell が永続的に持つ foundation サービス (renderer / audio / voice / score) を共有しつつ、
 // scene を切り替えるだけでゲームを遷移する。 これにより、 AudioContext / SpeechSynthesis や
-// うにキャラクターの canvas は **作り直さず** に再利用できる ([[project-uniland]] の「軽量」 方針)。
+// うにキャラクターの canvas は **作り直さず** に再利用できる ([[project-ludellus]] の「軽量」 方針)。
 //
 // PC 専用 (マウス + キーボード) を前提に設計。 タッチも入るが multi-touch 等の特殊対応はしない。
 

@@ -19,7 +19,7 @@
 
 - 分岐は捨てない。 過去のブランチに戻って再プレイ可能
 - ブランチには **生成パラメータ + 親 ID + 学力スナップショット** が付随する
-- ローカル保存 (`uniland.branches.v1`)
+- ローカル保存 (`ludellus.branches.v1`)
 
 ### 4-2: main 復帰のための段階提示
 
@@ -63,7 +63,7 @@ interface BranchStore {
 }
 ```
 
-localStorage key: `uniland.branches.v1`
+localStorage key: `ludellus.branches.v1`
 
 ## 3. UI スケッチ
 
@@ -109,7 +109,7 @@ localStorage key: `uniland.branches.v1`
 
 | 方式 | 長所 | 短所 |
 |---|---|---|
-| **Claude API (online)** | 高品質、 学習指導要領との照合まで AI に任せられる | **UniLand のローカル方針と衝突**、 コスト、 オフライン不可 |
+| **Claude API (online)** | 高品質、 学習指導要領との照合まで AI に任せられる | **Ludellus のローカル方針と衝突**、 コスト、 オフライン不可 |
 | **ローカル LLM (WebGPU)** | オフライン、 プライバシー | 数百 MB、 子供 PC では遅い、 品質下がる |
 | **ルールベース + テンプレート** | 確実、 軽量、 オフライン | 表現の幅が狭い |
 
@@ -119,8 +119,8 @@ localStorage key: `uniland.branches.v1`
 - **第二段 (Claude API, opt-in):** 「漢字混在」 「自分でリクエスト文を書く」 等の自由度の高い改修だけ Claude API を呼ぶ。 ユーザに **明示的同意** + 通信発生表示
 - 第一段だけでも 8 割の改修要望はカバーできる想定
 
-これにより UniLand 既定はローカル動作、 AI 改修だけオンライン opt-in という形が取れる。
-[[project-uniland]] の方針との折り合いも保てる。
+これにより Ludellus 既定はローカル動作、 AI 改修だけオンライン opt-in という形が取れる。
+[[project-ludellus]] の方針との折り合いも保てる。
 
 ## 5. 学習指導要領との結線
 
@@ -154,7 +154,7 @@ uni-writing-game#hiragana → japanese.g1.unit1.hiragana
 - **「学力プロファイル」** の具体定義 — 単純な score だけか、 試行回数 / つまずきパターンも含めるか
 - **改修の可逆性** — 「もうすこし難しい」 → やってみて合わなかった → 親に戻すまでの UX
 - **子供が分岐しすぎた場合** の整理機能 (古いブランチの archive / 削除)
-- **複数子供で同端末を共有する場合** のプロファイル切替 (`uniland.profiles.v1` を別途用意?)
+- **複数子供で同端末を共有する場合** のプロファイル切替 (`ludellus.profiles.v1` を別途用意?)
 - **AI 改修の品質保証** — 生成された問題が解けない/不適切な場合のフィードバックループ
 
 ## 関連

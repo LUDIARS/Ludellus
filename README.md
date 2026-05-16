@@ -1,7 +1,8 @@
-# UniLand
+# Ludellus
 
 LUDIARS 知育プロジェクトの 1 アプリ。 Claude Web フロントエンドで作った HTML/CSS/JS モックアップを軽量に動かしつつ、
-ユーザの入力動態を学習分析に回す。 マスコットは **「うに」** (Claude スターバーストロゴ、 UniLand = 「うにの国」)。
+ユーザの入力動態を学習分析に回す。 マスコットは **「うに」** (Claude スターバーストロゴ)。
+プロジェクト名 *Ludellus* は親組織 LUDIARS の "Ludus" (遊び・学び・学校) の縮小辞で「ちっちゃい学び・あそび」 の意。
 
 ## アーキテクチャ概要
 
@@ -12,7 +13,7 @@ LUDIARS 知育プロジェクトの 1 アプリ。 Claude Web フロントエン
    ┌──────────┴──────────┐
    │                     │                       │
    ▼                     ▼                       ▼
-[ Cernere ]      [ UniLand サーバ ]        [ Memoria ]
+[ Cernere ]      [ Ludellus サーバ ]        [ Memoria ]
   大人 auth         分岐 / score              学習活動の集計
                    AI 改修 proxy             保護者レポート
 ```
@@ -54,8 +55,8 @@ LUDIARS の個人データ保管禁止ルール (AIFormat §5) 準拠。 raw な
 | データ | 持ち主 | 内容 |
 |---|---|---|
 | 大人ユーザ identity | Cernere | 保護者・教師。 PASETO + per-user project-token |
-| 子供プロファイル | UniLand サーバ | 親アカウント配下、 デフォルト「うに」 + 色のみ |
-| スコア / 分岐ツリー | UniLand サーバ | localStorage 一次 + 非同期 sync (オフライン優先) |
+| 子供プロファイル | Ludellus サーバ | 親アカウント配下、 デフォルト「うに」 + 色のみ |
+| スコア / 分岐ツリー | Ludellus サーバ | localStorage 一次 + 非同期 sync (オフライン優先) |
 | 学習活動ログ (集計) | Memoria | セッション単位の集計値のみ、 raw なし |
 
 子供 auth は **パスワードレス** (親 Cernere アカウント配下のサブプロファイル)。 COPPA / 個人情報保護法 / GDPR kids 対応。
@@ -63,7 +64,7 @@ LUDIARS の個人データ保管禁止ルール (AIFormat §5) 準拠。 raw な
 ## 次の TODO
 
 - PWA manifest + service worker ([docs/MOBILE.md](./docs/MOBILE.md) Phase 1)
-- UniLand サーバ MVP (`/api/v1/profiles` + `/scores`)、 別リポ `LUDIARS/UniLand-Server` 案
+- Ludellus サーバ MVP (`/api/v1/profiles` + `/scores`)、 別リポ `LUDIARS/Ludellus-Server` 案
 - Capacitor scaffold (Android / iOS ビルド)
 - Pictor の C ABI export + WASM パッケージング ([docs/PICTOR.md](./docs/PICTOR.md))
 - 既存 sample を抽象 render API ベースに移植 (任意、 リファレンス温存も可)
