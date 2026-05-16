@@ -17,8 +17,9 @@ export class UniMathScene extends Scene {
   enter() {
     const wrap = this.ctx.canvas.parentElement;
     this.iframe = document.createElement("iframe");
-    // serve root が project root の前提。 renderer/shell.html から見て ../sample/...
-    this.iframe.src = "../sample/uni-math.html";
+    // renderer/shell.html から見て同一スコープ内の games/uni-math/index.html
+    // (sample/ から本ディレクトリへ「原本移植」 済み、 修正もこの index.html を直接編集すれば反映される)
+    this.iframe.src = "games/uni-math/index.html";
     this.iframe.style.cssText = [
       "position:absolute",
       "inset:0",

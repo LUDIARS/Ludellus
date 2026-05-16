@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="color-scheme" content="light only" />
+<meta name="theme-color" content="#f7f1e8" />
+<meta name="supported-color-schemes" content="light" />
+<title>うにと けいさん あそび</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Yusei+Magic&display=swap" rel="stylesheet">
+<style>
+  /* ダークモードでもブラウザが色を勝手に反転しないように light に固定 */
+  html {
+    color-scheme: light only;
+    -webkit-text-size-adjust: 100%;
+    forced-color-adjust: none;
+  }
+  :root {
+    color-scheme: light only;
+    --cream: #f7f1e8;
+    --paper: #fdfaf3;
+    --ink: #2a2118;
+    --uni: #d97757;
+    --uni-deep: #b85a3e;
+    --uni-soft: #f0c8b3;
+    --shadow: rgba(60, 35, 20, 0.08);
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    forced-color-adjust: none;     /* Windows ハイコントラスト対策 */
+  }
+  /* ボタン等のフォーム要素は OS / ブラウザ既定のダークモード色に飲まれやすい
+     ── 明示的に背景・前景・ボーダーを継承しておく */
+  button, input, select, textarea {
+    color: inherit;
+    background-color: transparent;
+    font-family: inherit;
+    border: none;
+    outline: none;
+  }
+  html, body {
+    width: 100%; height: 100%;
+    background-color: #f7f1e8;     /* 単色フォールバック (リテラル) */
+    color: #2a2118;
+    font-family: 'Zen Maru Gothic', sans-serif;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    touch-action: none;
+    overscroll-behavior: none;
+    /* スタート画面と同様に「自身が画面全体を覆う不透明背景」を持つ。
+       body の背景がブラウザ/OS のダークモードで上書きされても、
+       stage が常に明色のクリーム＋紙テクスチャで表示されるようにする */
+    color: #2a2118;
+    background-color: #f7f1e8;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(217,119,87,0.06) 0%, transparent 35%),
+      radial-gradient(circle at 88% 82%, rgba(217,119,87,0.05) 0%, transparent 40%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.6  0 0 0 0 0.4  0 0 0 0 0.2  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    isolation: isolate;            /* 子要素のスタッキングコンテキスト分離 */
+  }
+  .header {
+    position: absolute; top: 24px; left: 0; right: 0;
+    text-align: center;
+    pointer-events: none;
+  }
+  .title {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 14px; letter-spacing: 0.3em;
+    color: var(--uni-deep); opacity: 0.7;
+    text-transform: uppercase;
+  }
+
+  .mode-selector {
+    position: absolute; top: 56px; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 6px;
+    pointer-events: auto;
+    padding: 0 12px;
+  }
+  .mode-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700; font-size: 13px;
+    background: rgba(253, 250, 243, 0.7);
+    color: var(--uni-deep);
+    border: 1.5px solid rgba(217, 119, 87, 0.25);
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+  .mode-btn:active { transform: scale(0.94); }
+  .mode-btn.active {
+    background: var(--uni); color: var(--paper); border-color: var(--uni);
+    box-shadow: 0 4px 12px rgba(217, 119, 87, 0.3);
+  }
+
+  /* ─── 問題式 ─── */
+  .problem-row {
+    margin-top: 124px;
+    display: flex;
+    align-items: center; justify-content: center;
+    gap: 6px;
+    min-height: 76px;
+    padding: 0 12px;
+    flex-wrap: nowrap;
+  }
+  .problem-cell {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 52px;
+    color: var(--ink);
+    min-width: 38px; text-align: center;
+    line-height: 1;
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+  .problem-cell.op {
+    color: var(--uni-deep);
+    font-size: 44px;
+    margin: 0 2px;
+  }
+  .problem-cell.eq {
+    color: var(--uni-deep);
+    opacity: 0.65;
+    font-size: 40px;
+    margin: 0 4px;
+  }
+  .problem-cell.hole {
+    color: var(--uni);
+    background: rgba(217,119,87,0.10);
+    border: 2.5px dashed var(--uni);
+    border-radius: 14px;
+    width: 64px; height: 64px;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    font-size: 40px;
+    animation: hole-pulse 1.6s ease-in-out infinite;
+  }
+  .problem-cell.hole.filled-correct {
+    background: rgba(217,119,87,0.22);
+    border-style: solid;
+    color: var(--uni-deep);
+    animation: hole-pop 0.5s ease;
+  }
+  .problem-cell.hole.filled-wrong {
+    background: rgba(217,119,87,0.10);
+    border-style: solid;
+    border-color: rgba(184,90,62,0.45);
+    color: var(--uni-deep);
+    animation: hole-shake 0.4s ease;
+  }
+  .problem-cell.hole.filled-timeout {
+    background: rgba(217,119,87,0.18);
+    border-style: solid;
+    color: var(--uni-deep);
+    animation: hole-pop 0.5s ease;
+  }
+  @keyframes hole-pulse {
+    0%, 100% { transform: scale(1); border-color: var(--uni); }
+    50%      { transform: scale(1.05); border-color: var(--uni-deep); }
+  }
+  @keyframes hole-pop {
+    0%   { transform: scale(0.7); }
+    60%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  @keyframes hole-shake {
+    0%,100% { transform: translateX(0); }
+    25%     { transform: translateX(-4px); }
+    75%     { transform: translateX(4px); }
+  }
+
+  /* ─── キャンバスエリア (背景うに+降るうに) ─── */
+  #canvas-wrap {
+    flex: 1;
+    width: 100%;
+    max-width: 720px;
+    position: relative;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    touch-action: none;
+    min-height: 160px;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* ─── タイマーリング (ほのかに残り時間を示す) ─── */
+  .timer-bar {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
+    width: 64%;
+    max-width: 360px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(217,119,87,0.14);
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .timer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--uni), var(--uni-deep));
+    border-radius: 999px;
+    width: 100%;
+    transform-origin: left center;
+    transition: width 0.1s linear;
+  }
+  .timer-fill.urgent {
+    background: var(--uni-deep);
+    animation: timer-pulse 0.5s ease-in-out infinite;
+  }
+  @keyframes timer-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
+
+  /* ─── 選択肢パネル ─── */
+  .choices-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 0 12px 8px;
+    width: 100%;
+    max-width: 540px;
+    min-height: 96px;
+  }
+  .choice-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 36px;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--paper), #f5ecd9);
+    border: 2.5px solid rgba(217,119,87,0.25);
+    border-radius: 22px;
+    width: 84px; height: 84px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    box-shadow:
+      0 8px 18px var(--shadow),
+      inset 0 0 0 1px rgba(217,119,87,0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease,
+                background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  }
+  .choice-btn.op-btn { font-size: 44px; color: var(--uni-deep); }
+  .choice-btn:active:not(.locked) {
+    transform: translateY(3px) scale(0.97);
+    box-shadow: 0 3px 8px var(--shadow);
+  }
+  .choice-btn.shake {
+    animation: btn-shake 0.32s ease-in-out infinite;
+  }
+  @keyframes btn-shake {
+    0%, 100% { transform: translate(0, 0) rotate(0); }
+    20%      { transform: translate(-3px, 1px) rotate(-2deg); }
+    40%      { transform: translate(3px, -1px) rotate(2deg); }
+    60%      { transform: translate(-2px, 2px) rotate(-1.5deg); }
+    80%      { transform: translate(2px, -2px) rotate(1.5deg); }
+  }
+  .choice-btn.locked {
+    cursor: default;
+    pointer-events: none;
+    animation: none !important;
+  }
+  .choice-btn.correct {
+    background: var(--uni);
+    color: var(--paper);
+    border-color: var(--uni);
+    box-shadow: 0 10px 26px rgba(217,119,87,0.45),
+                inset 0 0 0 1px rgba(255,255,255,0.18);
+    transform: scale(1.08);
+  }
+  .choice-btn.correct.op-btn { color: var(--paper); }
+  .choice-btn.wrong-pick {
+    background: rgba(253,250,243,0.5);
+    color: rgba(42,33,24,0.35);
+    border-color: rgba(184,90,62,0.3);
+    border-style: dashed;
+    transform: scale(0.92) rotate(-3deg);
+  }
+  .choice-btn.faded {
+    opacity: 0.35;
+    transform: scale(0.95);
+  }
+
+  /* ─── フッター ─── */
+  .footer {
+    text-align: center;
+    pointer-events: none;
+    padding-bottom: 12px;
+    margin-top: 4px;
+  }
+  .hint {
+    display: inline-block;
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 13px;
+    color: var(--uni-deep);
+    background: rgba(253,250,243,0.85);
+    padding: 8px 18px;
+    border-radius: 999px;
+    letter-spacing: 0.1em;
+    box-shadow: 0 4px 14px var(--shadow);
+    border: 1.5px solid rgba(217,119,87,0.2);
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+  }
+
+  /* ─── スタートオーバーレイ ─── */
+  .start-overlay {
+    position: fixed; inset: 0;
+    background: rgba(247,241,232,0.96);
+    backdrop-filter: blur(8px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 100; cursor: pointer;
+    text-align: center;
+    transition: opacity 0.6s ease;
+  }
+  .start-overlay.hidden { opacity: 0; pointer-events: none; }
+  .start-mark {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 52px; color: var(--uni);
+    margin-bottom: 8px; line-height: 1.1;
+  }
+  .start-sub {
+    font-size: 14px; letter-spacing: 0.2em;
+    color: var(--uni-deep); opacity: 0.8;
+    margin-bottom: 28px;
+  }
+  .start-mode-label {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--uni-deep);
+    opacity: 0.65;
+    margin-bottom: 14px;
+  }
+  .start-mode-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 16px;
+    max-width: 360px;
+  }
+  .start-mode-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 11px 18px;
+    border-radius: 999px;
+    background: rgba(253,250,243,0.85);
+    color: var(--uni-deep);
+    border: 2px solid rgba(217,119,87,0.3);
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    position: relative;
+    letter-spacing: 0.05em;
+  }
+  .start-mode-btn:active { transform: scale(0.95); }
+  .start-mode-btn.selected {
+    background: var(--uni);
+    color: var(--paper);
+    border-color: var(--uni);
+    box-shadow: 0 4px 14px rgba(217,119,87,0.35);
+  }
+  .start-mode-btn .crown {
+    position: absolute;
+    top: -9px; right: -7px;
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 12px;
+    color: var(--uni-deep);
+    background: var(--paper);
+    border-radius: 50%;
+    width: 20px; height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(60,35,20,0.18);
+    border: 1.5px solid var(--uni);
+    line-height: 1;
+  }
+  .start-mode-btn.selected .crown {
+    color: var(--uni);
+    background: var(--paper);
+    border-color: var(--paper);
+  }
+  .start-btn {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 700;
+    background: var(--uni); color: var(--paper);
+    padding: 18px 44px; border-radius: 999px;
+    font-size: 18px; letter-spacing: 0.15em;
+    box-shadow: 0 8px 24px rgba(217,119,87,0.35);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .start-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 4px 14px rgba(217,119,87,0.3);
+  }
+
+  /* ─── 進捗ドット ─── */
+  .progress-dots {
+    position: absolute;
+    top: 96px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+    height: 14px;
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(217,119,87,0.14);
+    border: 1.5px solid rgba(217,119,87,0.28);
+    transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+    flex-shrink: 0;
+  }
+  .dot.correct {
+    background: var(--uni);
+    border-color: var(--uni);
+    box-shadow: 0 0 6px rgba(217,119,87,0.45);
+  }
+  .dot.wrong {
+    background: transparent;
+    border-style: dashed;
+    border-color: rgba(184,90,62,0.5);
+  }
+  .dot.current {
+    background: var(--paper);
+    border-width: 2px;
+    border-color: var(--uni-deep);
+    transform: scale(1.4);
+    animation: dot-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%, 100% { transform: scale(1.4); }
+    50%      { transform: scale(1.7); }
+  }
+
+  /* ─── 結果オーバーレイ (せいかい / ざんねん) ─── */
+  .result-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;     /* 全体は素通り (下の canvas に降下うにキャッチを通す) */
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    background: transparent;
+  }
+  .result-overlay.show { opacity: 1; }
+  /* テキストとヒント部分だけタップ可能にする (再開タップ用) */
+  .result-overlay.tappable .result-text,
+  .result-overlay.tappable .result-tap-hint {
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .result-text {
+    font-family: 'Yusei Magic', sans-serif;
+    font-weight: 700;
+    color: var(--uni-deep);
+    text-align: center;
+    text-shadow:
+      0 6px 28px rgba(217,119,87,0.35),
+      0 2px 0 rgba(253,250,243,0.9);
+    line-height: 1;
+    letter-spacing: 0.05em;
+  }
+  .result-text.big {
+    font-size: 88px;
+    color: var(--uni);
+    animation: result-pop 0.55s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-text.big::after {
+    content: '✦';
+    display: block;
+    font-size: 36px;
+    color: var(--uni-deep);
+    margin-top: 8px;
+    opacity: 0.7;
+    letter-spacing: 0;
+  }
+  .result-tap-hint {
+    position: absolute;
+    bottom: 14%;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 13px;
+    color: var(--uni-deep);
+    opacity: 0;
+    letter-spacing: 0.2em;
+    animation: tap-hint-fade 0.3s ease 0.7s forwards, bob 1.8s ease-in-out 1s infinite;
+  }
+  .result-text.small {
+    font-size: 40px;
+    color: var(--uni-deep);
+    opacity: 0.85;
+    animation: result-fade 0.4s ease;
+  }
+  /* 最終結果 (10問終了時) */
+  .result-text.final {
+    text-align: center;
+    animation: result-pop 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+  .result-text.final .score-num {
+    font-family: 'Yusei Magic', sans-serif;
+    font-size: 96px;
+    color: var(--uni);
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  .result-text.final .score-num .total {
+    font-size: 44px;
+    color: var(--uni-deep);
+    opacity: 0.65;
+    margin-left: 6px;
+  }
+  .result-text.final .score-msg {
+    font-family: 'Zen Maru Gothic', sans-serif;
+    font-weight: 900;
+    font-size: 40px;
+    color: var(--ink);
+    margin-top: 18px;
+    letter-spacing: 0.05em;
+  }
+  @keyframes result-pop {
+    0%   { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+    55%  { transform: scale(1.18) rotate(2deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  @keyframes result-fade {
+    0%   { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 0.85; }
+  }
+  @keyframes tap-hint-fade {
+    to { opacity: 0.75; }
+  }
+  @media (max-width: 480px) {
+    .result-text.big { font-size: 64px; }
+    .result-text.big::after { font-size: 28px; }
+    .result-text.small { font-size: 32px; }
+    .result-text.final .score-num { font-size: 72px; }
+    .result-text.final .score-num .total { font-size: 36px; }
+    .result-text.final .score-msg { font-size: 30px; margin-top: 14px; }
+  }
+
+  @media (max-width: 480px) {
+    .problem-cell { font-size: 42px; min-width: 32px; }
+    .problem-cell.op { font-size: 36px; }
+    .problem-cell.eq { font-size: 32px; }
+    .problem-cell.hole { width: 54px; height: 54px; font-size: 32px; }
+    .choice-btn { width: 70px; height: 70px; font-size: 30px; border-radius: 18px; }
+    .choice-btn.op-btn { font-size: 36px; }
+    .choices-row { gap: 10px; }
+    .title { font-size: 12px; }
+    .problem-row { margin-top: 114px; }
+  }
+  @media (max-height: 640px) {
+    .problem-row { margin-top: 110px; min-height: 64px; }
+    .problem-cell { font-size: 42px; }
+    .problem-cell.hole { width: 54px; height: 54px; font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="header"><div class="title">うに ✦ けいさん あそび</div></div>
+
+  <div class="mode-selector" id="modeSelector">
+    <button class="mode-btn active" data-mode="easy">かんたん</button>
+    <button class="mode-btn" data-mode="normal">ふつう</button>
+    <button class="mode-btn" data-mode="hard">むずかしい</button>
+  </div>
+
+  <div class="progress-dots" id="progressDots"></div>
+
+  <div class="problem-row" id="problemRow"></div>
+
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+  </div>
+
+  <div class="choices-row" id="choicesRow"></div>
+
+  <div class="footer"><span class="hint" id="hint">こたえを えらんでね</span></div>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-text" id="resultText"></div>
+  <div class="result-tap-hint" id="resultTapHint">タップで つぎへ</div>
+</div>
+
+<div class="start-overlay" id="startOverlay">
+  <div class="start-mark">＋✦</div>
+  <div class="start-sub">UNI ✦ KEISAN</div>
+  <div class="start-mode-label">どれで あそぶ？</div>
+  <div class="start-mode-buttons" id="startModeButtons">
+    <button class="start-mode-btn" data-mode="easy">かんたん</button>
+    <button class="start-mode-btn" data-mode="normal">ふつう</button>
+    <button class="start-mode-btn" data-mode="hard">むずかしい</button>
+  </div>
+  <button class="start-btn" id="startBtn">はじめる</button>
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   モード設定
+   ============================================================ */
+const MODES = {
+  easy: {
+    operators: ['+'],
+    canHoleC: true,
+    canHoleOp: false,
+    cMaxOneDigit: true,    // C は必ず1桁
+    choiceCountFn: () => Math.random() < 0.7 ? 2 : 3,  // 基本2択、たまに3択
+    opChoiceCount: 2,
+  },
+  normal: {
+    operators: ['+', '-'],
+    canHoleC: true,
+    canHoleOp: true,
+    cMaxOneDigit: true,
+    choiceCountFn: (hole) => hole === 'op' ? 2 : 3,    // 基本3択、記号穴のみ2択
+    opChoiceCount: 2,
+  },
+  hard: {
+    operators: ['+', '-', '×', '÷'],
+    canHoleC: true,        // ただし C が2桁の場合は穴にしない
+    canHoleOp: true,
+    cMaxOneDigit: false,
+    choiceCountFn: () => 4,
+    opChoiceCount: 4,
+  }
+};
+const OP_DISPLAY = { '+': '＋', '-': '－', '×': '×', '÷': '÷' };
+const OP_SPEAK   = { '+': 'たす', '-': 'ひく', '×': 'かける', '÷': 'わる' };
+let currentMode = 'easy';
+
+function randInt(min, max) { return min + ((Math.random() * (max - min + 1)) | 0); }
+
+/* ============================================================
+   問題生成
+   ============================================================ */
+function generateNumbersForOp(op, mode) {
+  let a, b, c;
+  const cOneDigit = MODES[mode].cMaxOneDigit;
+  const noZero = (mode === 'easy'); // かんたんモードでは A/B/C すべて 0 を出さない
+  if (op === '+') {
+    if (noZero) {
+      // a >= 1, b >= 1, c <= 9
+      a = randInt(1, 8);
+      b = randInt(1, 9 - a);
+    } else if (cOneDigit) {
+      a = randInt(0, 9); b = randInt(0, 9 - a);
+    } else {
+      a = randInt(0, 9); b = randInt(0, 9);
+    }
+    c = a + b;
+  } else if (op === '-') {
+    if (noZero) {
+      // a-b=c で a,b,c すべて >= 1: a=2-9, b=1-(a-1), c=a-b
+      a = randInt(2, 9);
+      b = randInt(1, a - 1);
+    } else if (cOneDigit) {
+      a = randInt(0, 9); b = randInt(0, a);
+    } else {
+      a = randInt(1, 18); b = randInt(0, a);
+    }
+    c = a - b;
+  } else if (op === '×') {
+    a = randInt(0, 9); b = randInt(0, 9);
+    c = a * b;
+  } else if (op === '÷') {
+    b = randInt(1, 9);
+    c = randInt(0, 9);
+    a = b * c;
+  }
+  return { a, b, c };
+}
+
+/* 演算子を穴にしたとき、与えられた A, B, C の組で「複数の演算子が同じ結果 C になる」
+   ような曖昧な問題かをチェックする。曖昧な場合は op を穴の候補から外す。
+   例: 6 ? 1 = 6 → ×でも ÷でも成立 / 5 ? 0 = 5 → +でも -でも成立 */
+function opHoleAmbiguous(a, b, c, ops) {
+  let matchCount = 0;
+  for (const o of ops) {
+    let v;
+    if (o === '+') v = a + b;
+    else if (o === '-') v = a - b;
+    else if (o === '×') v = a * b;
+    else if (o === '÷') {
+      if (b === 0 || a % b !== 0) continue;
+      v = a / b;
+    }
+    if (v === c) matchCount++;
+    if (matchCount > 1) return true;
+  }
+  return false;
+}
+
+function generateProblem(mode) {
+  const cfg = MODES[mode];
+  const op = cfg.operators[(Math.random() * cfg.operators.length) | 0];
+  const { a, b, c } = generateNumbersForOp(op, mode);
+
+  // 穴選び
+  const cIsDoubleDigit = c >= 10;
+  const candidates = ['a', 'b'];
+  if (cfg.canHoleC && !cIsDoubleDigit) candidates.push('c');
+  // 演算子穴: A または B に 0 が含まれていると複数の演算子で成立する (例: 5 ? 0 = 5 で +/- 共に正解)
+  // また、B=1 のときも × と ÷ が同値になる (6 ? 1 = 6) など曖昧性がある
+  // → 一般化して「複数の演算子が成立する組み合わせ」のときは op を穴にしない
+  if (cfg.canHoleOp && a !== 0 && b !== 0 && !opHoleAmbiguous(a, b, c, cfg.operators)) {
+    candidates.push('op');
+  }
+
+  const hole = candidates[(Math.random() * candidates.length) | 0];
+
+  // 選択肢の数
+  const choiceCount = cfg.choiceCountFn(hole);
+
+  // 答え
+  let answer;
+  if (hole === 'a') answer = a;
+  else if (hole === 'b') answer = b;
+  else if (hole === 'c') answer = c;
+  else answer = op;
+
+  const choices = generateChoices(answer, choiceCount, hole, mode);
+
+  return { a, b, c, op, hole, answer, choices, choiceCount };
+}
+
+function generateChoices(answer, count, hole, mode) {
+  const cfg = MODES[mode];
+  const list = [answer];
+
+  if (hole === 'op') {
+    // 演算子をランダムに count-1 個追加
+    const others = cfg.operators.filter(o => o !== answer);
+    // shuffle
+    for (let i = others.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [others[i], others[j]] = [others[j], others[i]];
+    }
+    for (let i = 0; i < count - 1 && i < others.length; i++) list.push(others[i]);
+  } else {
+    // 数字を ±1〜±5 程度の範囲で生成
+    // easy/normal は C が1桁前提なので選択肢も 0-9 範囲、hard は 0-99 範囲
+    // かんたんモードでは 0 を出さない (問題式に 0 が出ない仕様に合わせる)
+    const max = mode === 'hard' ? 99 : 9;
+    const min = mode === 'easy' ? 1 : 0;
+    let safety = 200;
+    while (list.length < count && safety-- > 0) {
+      const delta = randInt(1, 5);
+      const sign = Math.random() < 0.5 ? -1 : 1;
+      const cand = answer + sign * delta;
+      if (cand >= min && cand <= max && !list.includes(cand)) list.push(cand);
+    }
+    // それでも足りなければ min から順に追加
+    for (let n = min; n <= max && list.length < count; n++) {
+      if (!list.includes(n)) list.push(n);
+    }
+  }
+
+  // シャッフル
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+/* ============================================================
+   降下うに数の計算
+     仕様: 「C + 問題の選択肢の合計数 (記号は 9 とみなす)」
+     例: x + 2 = 3、選択肢 [5, 1] なら 3 + 5 + 1 = 9 体
+     画面混雑とパフォーマンスの観点から最低 3 / 最大 60 にクランプ
+   ============================================================ */
+function computeRainCount(problem) {
+  let sum = problem.c;
+  for (const ch of problem.choices) {
+    sum += (typeof ch === 'string') ? 9 : ch;
+  }
+  return Math.max(3, Math.min(sum, 60));
+}
+
+/* ============================================================
+   AUDIO — 元サンプルの「うに」効果音 + 正解/不正解/タイムアップ
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e) { audioCtx = null; }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playSyllable(when, vowel, pitch) {
+  const ctx = ensureAudio(); if (!ctx) return;
+  const dur = 0.13;
+  const t0 = ctx.currentTime + when;
+  const osc1 = ctx.createOscillator(); osc1.type = 'sawtooth';
+  const osc2 = ctx.createOscillator(); osc2.type = 'square';
+  osc1.frequency.value = pitch;
+  osc2.frequency.value = pitch * 1.005;
+  const f1 = ctx.createBiquadFilter(); f1.type = 'bandpass'; f1.Q.value = 9;
+  const f2 = ctx.createBiquadFilter(); f2.type = 'bandpass'; f2.Q.value = 12;
+  if (vowel === 'u') { f1.frequency.value = 320; f2.frequency.value = 800; }
+  else               { f1.frequency.value = 280; f2.frequency.value = 2200; }
+  const f3 = ctx.createBiquadFilter(); f3.type = 'bandpass'; f3.Q.value = 18;
+  f3.frequency.value = vowel === 'i' ? 1500 : 700;
+  const mix = ctx.createGain(); mix.gain.value = 0.5;
+  const env = ctx.createGain();
+  env.gain.setValueAtTime(0, t0);
+  env.gain.linearRampToValueAtTime(0.18, t0 + 0.012);
+  env.gain.setValueAtTime(0.18, t0 + dur - 0.04);
+  env.gain.linearRampToValueAtTime(0, t0 + dur);
+  const shaper = ctx.createWaveShaper();
+  const curve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const x = (i - 128) / 128;
+    curve[i] = Math.tanh(x * 2.4) * 0.85;
+  }
+  shaper.curve = curve;
+  osc1.connect(f1); osc2.connect(f2);
+  f1.connect(mix); f2.connect(mix); osc2.connect(f3); f3.connect(mix);
+  mix.connect(shaper); shaper.connect(env); env.connect(ctx.destination);
+  osc1.start(t0); osc2.start(t0);
+  osc1.stop(t0 + dur); osc2.stop(t0 + dur);
+}
+function playUni(pitchOffset) {
+  pitchOffset = pitchOffset || 0;
+  const base = 182 + Math.random() * 14 + pitchOffset;
+  playSyllable(0,    'u', base);
+  playSyllable(0.13, 'i', base * 1.22);
+}
+function playCorrect() {
+  // ピンポーン × 2 (高めの2音、ベル風)
+  const ctx = ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const playPair = (offset) => {
+    [
+      { f: 1320, t: 0.00, dur: 0.18 },  // ピン
+      { f: 1050, t: 0.18, dur: 0.34 },  // ポーン
+    ].forEach(n => {
+      const tt = t0 + offset + n.t;
+      const osc = ctx.createOscillator(); osc.type = 'sine';
+      const osc2 = ctx.createOscillator(); osc2.type = 'sine';
+      osc.frequency.value = n.f;
+      osc2.frequency.value = n.f * 2.005; // 倍音をうっすら
+      const g = ctx.createGain();
+      const g2 = ctx.createGain(); g2.gain.value = 0.05;
+      g.gain.setValueAtTime(0, tt);
+      g.gain.linearRampToValueAtTime(0.22, tt + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.001, tt + n.dur);
+      osc.connect(g); osc2.connect(g2);
+      g.connect(ctx.destination); g2.connect(ctx.destination);
+      osc.start(tt); osc.stop(tt + n.dur + 0.05);
+      osc2.start(tt); osc2.stop(tt + n.dur + 0.05);
+    });
+  };
+  playPair(0);
+  playPair(0.55);
+}
+
+function playWrong() {
+  // ブブー (低めの2音、不正解ブザー)
+  const ctx = ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  [
+    { t: 0.00, dur: 0.20, f: 220 },
+    { t: 0.24, dur: 0.42, f: 195 },
+  ].forEach(n => {
+    const tt = t0 + n.t;
+    const osc = ctx.createOscillator(); osc.type = 'sawtooth';
+    const g = ctx.createGain();
+    osc.frequency.value = n.f;
+    g.gain.setValueAtTime(0, tt);
+    g.gain.linearRampToValueAtTime(0.18, tt + 0.018);
+    g.gain.exponentialRampToValueAtTime(0.001, tt + n.dur);
+    const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 800;
+    osc.connect(lpf); lpf.connect(g); g.connect(ctx.destination);
+    osc.start(tt); osc.stop(tt + n.dur + 0.05);
+  });
+}
+
+function playTimeUp() {
+  // デロロン (下降グリッサンド + ビブラート、残念音)
+  const ctx = ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(); osc.type = 'triangle';
+  osc.frequency.setValueAtTime(520, t0);
+  osc.frequency.exponentialRampToValueAtTime(140, t0 + 0.7);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.20, t0 + 0.02);
+  g.gain.setValueAtTime(0.20, t0 + 0.55);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.75);
+  // ビブラート
+  const lfo = ctx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 9;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 14;
+  lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.8);
+  lfo.start(t0); lfo.stop(t0 + 0.8);
+}
+
+/* 擬音セリフ用 (SpeechSynthesis を使って「ピンポンピンポン」「ブブー」等を発声) */
+function speakOnomatopoeia(text, opts) {
+  opts = opts || {};
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = opts.rate || 1.15;
+  u.pitch = opts.pitch || 1.4;
+  const voices = speechSynthesis.getVoices();
+  const ja = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
+  if (ja) u.voice = ja;
+  speechSynthesis.speak(u);
+}
+function playUrgentTick() {
+  const ctx = ensureAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator(); osc.type = 'square';
+  osc.frequency.value = 880;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(0.06, t0 + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.08);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + 0.09);
+}
+
+function speakAnswer(problem, onComplete) {
+  const finish = () => { if (onComplete) { const f = onComplete; onComplete = null; f(); } };
+  if (!('speechSynthesis' in window)) {
+    setTimeout(finish, 1600);
+    return;
+  }
+  // 注意: 擬音 (speakOnomatopoeia) と連続再生したいので cancel() しない
+  const text = `${problem.a} ${OP_SPEAK[problem.op]} ${problem.b} は ${problem.c}`;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 0.92;
+  u.pitch = 1.05;
+  const voices = speechSynthesis.getVoices();
+  const ja = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ja'));
+  if (ja) u.voice = ja;
+  u.onend = finish;
+  u.onerror = finish;
+  speechSynthesis.speak(u);
+  // フォールバック: 5 秒で強制完了
+  setTimeout(finish, 5000);
+}
+
+/* ============================================================
+   キャンバス & うにキャラ
+   ============================================================ */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const wrap = document.getElementById('canvas-wrap').getBoundingClientRect();
+  W = Math.floor(wrap.width);
+  H = Math.floor(wrap.height);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  repositionBgUnis();
+}
+window.addEventListener('resize', resize);
+
+class Uni {
+  constructor(x, y, scale) {
+    this.x = this.tx = x;
+    this.y = this.ty = y;
+    this.scale = this.scaleTarget = scale;
+    this.baseScale = scale;
+    this.rotation = 0; // 永続回転 (降下うに用)
+
+    this.tentacles = [];
+    const angles = [0.05, 0.55, 1.05, 1.5, 1.95, 2.45, 2.95, 3.55, 4.1, 4.65, 5.25];
+    const lens   = [22,  28,   24,   30,  26,   22,   28,   24,   30,  25,   27];
+    for (let i = 0; i < angles.length; i++) {
+      this.tentacles.push({
+        baseAngle: angles[i],
+        baseLen: lens[i],
+        len: lens[i], lenTarget: lens[i],
+        wig: Math.random() * Math.PI * 2,
+        wigSpeed: 0.05 + Math.random() * 0.04,
+        thick: 4.5 + Math.random() * 1.8,
+        curve: (Math.random() - 0.5) * 1.6,
+        curveTarget: (Math.random() - 0.5) * 1.6
+      });
+    }
+
+    this.actions = [];
+    this.actYOffset = 0;
+    this.actScale = 1;
+    this.actRot = 0;
+    this.actTentBoost = null;
+    this.idleMotion = true;
+  }
+
+  setTarget(x, y) { this.tx = x; this.ty = y; }
+
+  triggerActions() {
+    const all = ['jump', 'tentacle', 'rotate', 'scale'];
+    const pool = all.slice();
+    const a1 = pool.splice((Math.random() * pool.length) | 0, 1)[0];
+    const a2 = pool.splice((Math.random() * pool.length) | 0, 1)[0];
+    const dur = 0.65 + Math.random() * 0.25;
+    this.actions = [this._buildAction(a1, dur), this._buildAction(a2, dur)];
+  }
+  _buildAction(type, dur) {
+    const a = { type: type, time: 0, duration: dur };
+    if (type === 'tentacle') a.tentIdx = (Math.random() * this.tentacles.length) | 0;
+    if (type === 'rotate')   a.dir = Math.random() < 0.5 ? 1 : -1;
+    return a;
+  }
+  isPlayingActions() { return this.actions.length > 0; }
+
+  update(dt) {
+    const bodyRate = 1 - Math.exp(-12 * dt);
+    this.x += (this.tx - this.x) * bodyRate;
+    this.y += (this.ty - this.y) * bodyRate;
+    this.scale += (this.scaleTarget - this.scale) * bodyRate;
+
+    const tentRate = 1 - Math.exp(-15 * dt);
+    for (const t of this.tentacles) {
+      if (this.idleMotion) {
+        t.wig += t.wigSpeed * (dt * 60);
+        t.len += (t.lenTarget - t.len) * tentRate;
+        if (Math.random() < 0.015) t.curveTarget = (Math.random() - 0.5) * 1.6;
+        t.curve += (t.curveTarget - t.curve) * (1 - Math.exp(-4 * dt));
+      }
+    }
+
+    this.actYOffset = 0;
+    this.actScale = 1;
+    this.actRot = 0;
+    this.actTentBoost = null;
+    for (let i = this.actions.length - 1; i >= 0; i--) {
+      const a = this.actions[i];
+      a.time += dt;
+      const t = a.time / a.duration;
+      if (t >= 1) { this.actions.splice(i, 1); continue; }
+      switch (a.type) {
+        case 'jump':     this.actYOffset = -50 * Math.sin(Math.PI * t); break;
+        case 'tentacle': this.actTentBoost = { idx: a.tentIdx, mult: 1 + 1.0 * Math.sin(Math.PI * t) }; break;
+        case 'rotate':   this.actRot = Math.PI * 2 * t * a.dir; break;
+        case 'scale':    this.actScale = 1 + 0.4 * Math.sin(Math.PI * t); break;
+      }
+    }
+  }
+
+  draw(c) {
+    c.save();
+    const drawX = this.x;
+    const drawY = this.y + this.actYOffset;
+    const drawScale = this.scale * this.actScale;
+    const totalRot = this.rotation + this.actRot;
+
+    c.translate(drawX, drawY);
+    if (totalRot !== 0) c.rotate(totalRot);
+    c.scale(drawScale, drawScale);
+
+    for (let i = 0; i < this.tentacles.length; i++) {
+      const t = this.tentacles[i];
+      let angle = this.idleMotion
+        ? t.baseAngle + Math.sin(t.wig) * 0.18
+        : t.baseAngle;
+      let len = this.idleMotion
+        ? t.len + Math.sin(t.wig * 1.4) * 3
+        : t.baseLen;
+      if (this.actTentBoost && this.actTentBoost.idx === i) len *= this.actTentBoost.mult;
+
+      const ex = Math.cos(angle) * len;
+      const ey = Math.sin(angle) * len;
+      const perp = angle + Math.PI / 2;
+      const cAmt = this.idleMotion ? t.curve * 6 + Math.sin(t.wig * 0.7) * 4 : 0;
+      const cx = Math.cos(angle) * len * 0.5 + Math.cos(perp) * cAmt;
+      const cy = Math.sin(angle) * len * 0.5 + Math.sin(perp) * cAmt;
+
+      c.strokeStyle = '#d97757';
+      c.lineWidth = t.thick;
+      c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.quadraticCurveTo(cx, cy, ex, ey);
+      c.stroke();
+
+      c.fillStyle = '#d97757';
+      c.beginPath();
+      c.arc(ex, ey, t.thick * 0.42, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.restore();
+  }
+
+  hitTest(px, py) {
+    const r = 50 * this.baseScale;
+    return Math.hypot(px - this.x, py - this.y) < r;
+  }
+}
+
+/* ============================================================
+   背景うに (にぎやかし 3体) & 降ってくるうに
+   ============================================================ */
+const bgUnis = [
+  new Uni(0, 0, 0.62),
+  new Uni(0, 0, 0.62),
+  new Uni(0, 0, 0.62)
+];
+// にぎやかしのうにはアイドル時はアニメーションしない (タップ or 正解時にだけ動く)
+bgUnis.forEach(u => { u.idleMotion = false; });
+
+function repositionBgUnis() {
+  if (W === 0 || H === 0) return;
+  // 問題式の周辺(キャンバス上部)に3体配置
+  bgUnis[0].x = bgUnis[0].tx = W * 0.15;
+  bgUnis[0].y = bgUnis[0].ty = H * 0.30;
+
+  bgUnis[1].x = bgUnis[1].tx = W * 0.85;
+  bgUnis[1].y = bgUnis[1].ty = H * 0.30;
+
+  bgUnis[2].x = bgUnis[2].tx = W * 0.50;
+  bgUnis[2].y = bgUnis[2].ty = H * 0.78;
+}
+
+/* タイマーバーの canvas 内の bbox を返す (降下うにとの衝突判定用) */
+function getBarBounds() {
+  const barW = Math.min(W * 0.64, 360);
+  const left = (W - barW) / 2;
+  const fillRatio = Math.max(0, Math.min(1, timeLeft / TIME_LIMIT));
+  const fillRight = left + barW * fillRatio;
+  // CSS: bottom: 12px, height: 4px → 上端 = H - 16, 下端 = H - 12
+  const top = H - 16;
+  const bottom = H - 12;
+  return { left, right: left + barW, fillRight, top, bottom };
+}
+
+/* 降下うに */
+class FallingUni extends Uni {
+  constructor(x, y, scale) {
+    super(x, y, scale);
+    this.vy = 0;
+    this.vx = (Math.random() - 0.5) * 60;
+    this.gravity = 380 + Math.random() * 160;
+    this.rotSpeed = (Math.random() - 0.5) * 5;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.spawnTime = performance.now();
+    this.bounced = 0;
+    this.passThrough = false;
+    this.life = 4.0;
+    // キャッチ用
+    this.number = randInt(1, 9);     // それぞれ持っている数字 (1-9)
+    this.caught = false;             // 指で捕まえられているか
+    this.pointerId = null;
+    this.captureOffsetX = 0;
+    this.captureOffsetY = 0;
+  }
+  step(dt) {
+    if (this.caught) {
+      // 指で捕まえられている間は物理停止 (位置は pointermove で更新される)
+      // life もカウントダウンしない (持ち続けられる)
+      return;
+    }
+
+    // 重力で速度更新
+    this.vy += this.gravity * dt;
+    this.x += this.vx * dt;
+    const newY = this.y + this.vy * dt;
+
+    // タイマーバーとの衝突判定
+    if (!this.passThrough && this.vy > 0) {
+      const bar = getBarBounds();
+      const r = 22 * this.baseScale;
+      const hasFill = bar.fillRight > bar.left + 2;
+      if (hasFill && this.x > bar.left - r * 0.6 && this.x < bar.fillRight + r * 0.6) {
+        const collideY = bar.top - r * 0.4;
+        if (this.y <= collideY && newY >= collideY) {
+          this.y = collideY;
+          this.vy = -this.vy * 0.55;
+          this.vx += (Math.random() - 0.5) * 90;
+          this.rotSpeed *= 1.25;
+          this.bounced++;
+          if (this.bounced >= 3 || Math.abs(this.vy) < 70) {
+            this.passThrough = true;
+            this.life = Math.min(this.life, 1.6);
+          }
+          this.rotation += this.rotSpeed * dt;
+          this.life -= dt;
+          this.vx *= 0.99;
+          this.tx = this.x; this.ty = this.y;
+          return;
+        }
+      }
+    }
+
+    this.y = newY;
+    this.rotation += this.rotSpeed * dt;
+    this.life -= dt;
+    this.vx *= 0.995;
+    this.tx = this.x; this.ty = this.y;
+  }
+}
+const fallingUnis = [];
+const caughtUnis = [];          // 指で捕まえているうに
+const floatingNumbers = [];     // 指を離した後に残る数字
+
+/* 数字をその場に残してフェードアウトする浮遊数字 */
+class FloatingNumber {
+  constructor(x, y, num) {
+    this.x = x; this.y = y;
+    this.num = num;
+    this.maxLife = 3.0;
+    this.life = this.maxLife;
+    this.vx = (Math.random() - 0.5) * 50;
+    this.vy = -40 - Math.random() * 30;
+    this.scale = 0.5;
+    this.scaleTarget = 1.4;
+    this.rot = (Math.random() - 0.5) * 0.35;
+  }
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vy += 90 * dt;       // 軽い重力
+    this.vx *= 0.97;
+    this.scale += (this.scaleTarget - this.scale) * 7 * dt;
+    this.life -= dt;
+  }
+  draw(c) {
+    const t = this.life / this.maxLife;
+    const opacity = Math.max(0, Math.min(1, t * 1.5));
+    c.save();
+    c.globalAlpha = opacity;
+    c.translate(this.x, this.y);
+    c.rotate(this.rot);
+    c.scale(this.scale, this.scale);
+    c.fillStyle = '#b85a3e';
+    c.strokeStyle = '#fdfaf3';
+    c.lineWidth = 6;
+    c.lineJoin = 'round';
+    c.font = '900 56px "Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.strokeText(String(this.num), 0, 0);
+    c.fillText(String(this.num), 0, 0);
+    c.restore();
+  }
+}
+
+/* キャッチ中のうに横に表示する数字 */
+function drawCaughtNumber(c, u) {
+  c.save();
+  c.fillStyle = '#b85a3e';
+  c.strokeStyle = '#fdfaf3';
+  c.lineWidth = 5;
+  c.lineJoin = 'round';
+  c.font = '900 44px "Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif';
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  const ny = u.y - 50 * u.baseScale - 14;
+  c.strokeText(String(u.number), u.x, ny);
+  c.fillText(String(u.number), u.x, ny);
+  c.restore();
+}
+
+function spawnUniRain(count) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => spawnSingleFallingUni(), i * 55);
+  }
+}
+function spawnSingleFallingUni() {
+  if (W === 0) return;
+  const x = randInt(W * 0.05, W * 0.95);
+  const y = -40 - Math.random() * 80;
+  const scale = 0.36 + Math.random() * 0.22;
+  const u = new FallingUni(x, y, scale);
+  u.idleMotion = true;
+  fallingUnis.push(u);
+  if (Math.random() < 0.3) playUni(60); // たまに音
+}
+
+/* 結果発表中の無限降下 */
+let endlessRainId = null;
+function startEndlessRain() {
+  if (endlessRainId) return;
+  const tickRain = () => {
+    spawnSingleFallingUni();
+    endlessRainId = setTimeout(tickRain, 90 + Math.random() * 80);
+  };
+  tickRain();
+}
+function stopEndlessRain() {
+  if (endlessRainId) { clearTimeout(endlessRainId); endlessRainId = null; }
+}
+
+function clearAllSpawnedUnis() {
+  fallingUnis.length = 0;
+  caughtUnis.length = 0;
+  floatingNumbers.length = 0;
+}
+
+/* ============================================================
+   ベストスコア (localStorage 永続化)
+     - 各モードでの過去最高得点を保存
+     - 起動時のデフォルトモードを「クリア済みの次」にするために使う
+   ============================================================ */
+const STORAGE_KEY = 'uni-math-best-scores-v1';
+
+function loadBestScores() {
+  const fallback = { easy: 0, normal: 0, hard: 0 };
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return {
+      easy:   Math.max(0, Math.min(10, parsed.easy   | 0)),
+      normal: Math.max(0, Math.min(10, parsed.normal | 0)),
+      hard:   Math.max(0, Math.min(10, parsed.hard   | 0))
+    };
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function saveBestScore(mode, score) {
+  const best = loadBestScores();
+  if (score > (best[mode] || 0)) {
+    best[mode] = score;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(best)); } catch (e) {}
+  }
+}
+
+/*
+  デフォルトモードのルール:
+    - hard で 10/10 → hard
+    - normal で 10/10 → hard
+    - easy   で 10/10 → normal
+    - それ以外 → easy
+*/
+function getDefaultMode() {
+  const best = loadBestScores();
+  if (best.normal >= 10 || best.hard >= 10) return 'hard';
+  if (best.easy   >= 10) return 'normal';
+  return 'easy';
+}
+
+/* ============================================================
+   進捗管理 (各モード 10 問構成)
+   ============================================================ */
+const TOTAL_QUESTIONS = 10;
+let progress = { num: 0, correct: 0 };  // num: 既に解いた問題数 (0..10)
+const progressDotsEl = document.getElementById('progressDots');
+
+function buildProgressDots() {
+  progressDotsEl.innerHTML = '';
+  for (let i = 0; i < TOTAL_QUESTIONS; i++) {
+    const d = document.createElement('span');
+    d.className = 'dot';
+    progressDotsEl.appendChild(d);
+  }
+}
+function updateProgressDots() {
+  const dots = progressDotsEl.querySelectorAll('.dot');
+  dots.forEach(d => {
+    d.classList.remove('current');
+  });
+  // num は既に解いた数。今これから解く問題のインデックスは num
+  if (progress.num < TOTAL_QUESTIONS) {
+    dots[progress.num].classList.add('current');
+  }
+}
+function markProgress(idx, correct) {
+  const dots = progressDotsEl.querySelectorAll('.dot');
+  if (idx < 0 || idx >= dots.length) return;
+  dots[idx].classList.remove('current');
+  dots[idx].classList.add(correct ? 'correct' : 'wrong');
+}
+function resetProgress() {
+  progress = { num: 0, correct: 0 };
+  buildProgressDots();
+  updateProgressDots();
+}
+
+/* ============================================================
+   問題表示
+   ============================================================ */
+const problemRow = document.getElementById('problemRow');
+const choicesRow = document.getElementById('choicesRow');
+const timerFill = document.getElementById('timerFill');
+
+let currentProblem = null;
+let problemPhase = 'idle';   // idle | active | resolving
+let timeLeft = 0;
+const TIME_LIMIT = 10.0;     // 秒
+const SHAKE_AT = 3.0;        // 残り秒
+let shakeStarted = false;
+let lastUrgentTick = 0;
+
+function renderProblem(problem) {
+  problemRow.innerHTML = '';
+  const cells = [
+    { kind: 'a',  text: problem.a },
+    { kind: 'op', text: OP_DISPLAY[problem.op] },
+    { kind: 'b',  text: problem.b },
+    { kind: 'eq', text: '＝' },
+    { kind: 'c',  text: problem.c }
+  ];
+  for (const cell of cells) {
+    const span = document.createElement('span');
+    span.className = 'problem-cell';
+    if (cell.kind === 'op') span.classList.add('op');
+    if (cell.kind === 'eq') span.classList.add('eq');
+    if (cell.kind === problem.hole) {
+      span.classList.add('hole');
+      span.textContent = '?';
+      span.dataset.hole = 'true';
+    } else {
+      span.textContent = cell.text;
+    }
+    problemRow.appendChild(span);
+  }
+}
+
+function renderChoices(problem) {
+  choicesRow.innerHTML = '';
+  for (let i = 0; i < problem.choices.length; i++) {
+    const v = problem.choices[i];
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    if (problem.hole === 'op') btn.classList.add('op-btn');
+    btn.textContent = (problem.hole === 'op') ? OP_DISPLAY[v] : v;
+    btn.dataset.value = String(v);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      onChoiceTap(v, btn);
+    });
+    choicesRow.appendChild(btn);
+  }
+}
+
+function setHoleFilled(text, klass) {
+  const holeEl = problemRow.querySelector('[data-hole="true"]');
+  if (!holeEl) return;
+  holeEl.textContent = (currentProblem.hole === 'op') ? OP_DISPLAY[text] : text;
+  holeEl.classList.add(klass);
+}
+
+function startNextProblem() {
+  problemPhase = 'idle';
+  stopEndlessRain();
+  clearAllSpawnedUnis();
+  // 進捗が満了していたら結果へ (基本的にここには来ないが安全弁)
+  if (progress.num >= TOTAL_QUESTIONS) {
+    showFinalResult();
+    return;
+  }
+  updateProgressDots();
+  currentProblem = generateProblem(currentMode);
+  renderProblem(currentProblem);
+  renderChoices(currentProblem);
+  timeLeft = TIME_LIMIT;
+  shakeStarted = false;
+  lastUrgentTick = 0;
+  timerFill.classList.remove('urgent');
+  timerFill.style.width = '100%';
+  problemPhase = 'active';
+  updateHint('こたえを えらんでね');
+}
+
+function updateHint(text) {
+  const h = document.getElementById('hint');
+  if (h.textContent !== text) h.textContent = text;
+}
+
+/* ============================================================
+   結果オーバーレイ
+   ============================================================ */
+const resultOverlay = document.getElementById('resultOverlay');
+const resultText = document.getElementById('resultText');
+const resultTapHint = document.getElementById('resultTapHint');
+
+let _currentResultHandler = null;
+let _currentResultTimer = null;
+
+function clearResultBindings() {
+  if (_currentResultHandler) {
+    resultOverlay.removeEventListener('pointerdown', _currentResultHandler);
+    _currentResultHandler = null;
+  }
+  if (_currentResultTimer) {
+    clearTimeout(_currentResultTimer);
+    _currentResultTimer = null;
+  }
+}
+
+function hideResult() {
+  resultOverlay.classList.remove('show');
+  resultOverlay.classList.remove('tappable');
+  clearResultBindings();
+}
+
+function showResultBig(text, onTap) {
+  clearResultBindings();
+  resultText.textContent = text;
+  resultText.className = 'result-text big';
+  resultTapHint.style.display = '';
+  resultTapHint.textContent = 'タップで つぎへ';
+  // 再アニメさせるために一旦リセット
+  void resultText.offsetWidth;
+  resultOverlay.classList.add('show');
+  resultOverlay.classList.add('tappable');
+
+  let handled = false;
+  const fire = () => {
+    if (handled) return;
+    handled = true;
+    clearResultBindings();
+    hideResult();
+    if (onTap) onTap();
+  };
+  _currentResultHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fire();
+  };
+  resultOverlay.addEventListener('pointerdown', _currentResultHandler);
+  // 3 秒経過で自動遷移
+  _currentResultTimer = setTimeout(fire, 3000);
+}
+
+function showResultSmall(text, durationMs, onDone) {
+  clearResultBindings();
+  resultText.textContent = text;
+  resultText.className = 'result-text small';
+  resultTapHint.style.display = 'none';
+  void resultText.offsetWidth;
+  resultOverlay.classList.add('show');
+  // durationMs が指定されたときのみ自動 hide。null/0 の場合は呼び出し側で hideResult を呼ぶ
+  if (durationMs && durationMs > 0) {
+    _currentResultTimer = setTimeout(() => {
+      hideResult();
+      if (onDone) onDone();
+    }, durationMs);
+  }
+}
+
+/* 最終結果 (10問終了時) */
+function getFinalMessage(score) {
+  if (score === 10) return 'すごいね！ ぱーふぇくと！';
+  if (score >= 8)   return 'とっても じょうず！';
+  if (score >= 6)   return 'やったね！';
+  if (score >= 4)   return 'もうすこし！';
+  if (score >= 1)   return 'つぎは がんばろう！';
+  return 'がんばろう！';
+}
+
+function showFinalResult() {
+  problemPhase = 'resolving';
+  clearResultBindings();
+  const score = progress.correct;
+  const msg = getFinalMessage(score);
+
+  // ベストスコアを永続化
+  saveBestScore(currentMode, score);
+  // スタート画面のクラウン表示も更新しておく (次回起動時のために)
+  selectedStartMode = getDefaultMode();
+  refreshStartModeUI();
+
+  resultText.innerHTML =
+    `<div class="score-num">${score}<span class="total">/${TOTAL_QUESTIONS}</span></div>` +
+    `<div class="score-msg">${msg}</div>`;
+  resultText.className = 'result-text final';
+  resultTapHint.style.display = '';
+  resultTapHint.textContent = 'タップで もういっかい';
+  void resultText.offsetWidth;
+  resultOverlay.classList.add('show');
+  resultOverlay.classList.add('tappable');
+
+  // うにを無限に降らせる (タップで再開するまで止まらない)
+  startEndlessRain();
+
+  // 背景うにも喜ぶ
+  bgUnis.forEach((u, i) => {
+    setTimeout(() => u.triggerActions(), i * 140);
+  });
+
+  // ピンポンは鳴らさず、メッセージを読み上げる
+  setTimeout(() => speakOnomatopoeia(msg, { rate: 1.05, pitch: 1.25 }), 250);
+
+  let handled = false;
+  const fire = () => {
+    if (handled) return;
+    handled = true;
+    clearResultBindings();
+    stopEndlessRain();
+    speechSynthesis.cancel();
+    hideResult();
+    clearAllSpawnedUnis();
+    resetProgress();
+    startNextProblem();
+  };
+  _currentResultHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    fire();
+  };
+  resultOverlay.addEventListener('pointerdown', _currentResultHandler);
+}
+
+/* ============================================================
+   回答処理
+   ============================================================ */
+function onChoiceTap(value, btn) {
+  if (problemPhase !== 'active') return;
+  const correct = (value === currentProblem.answer);
+  resolveProblem(correct, btn);
+}
+
+function resolveProblem(correct, pickedBtn) {
+  problemPhase = 'resolving';
+  // タイマーバーは止める意味で urgent も解除
+  timerFill.classList.remove('urgent');
+
+  // ボタンをロック
+  const btns = choicesRow.querySelectorAll('.choice-btn');
+  btns.forEach(b => {
+    b.classList.remove('shake');
+    b.style.animationDelay = '';
+    b.classList.add('locked');
+  });
+
+  // 正解ボタンを特定
+  const correctValStr = String(currentProblem.answer);
+  let correctBtn = null;
+  btns.forEach(b => {
+    if (b.dataset.value === correctValStr) correctBtn = b;
+  });
+
+  if (pickedBtn && !correct) {
+    pickedBtn.classList.add('wrong-pick');
+  }
+  // 不正解パネルをフェード
+  btns.forEach(b => {
+    if (b !== correctBtn && b !== pickedBtn) b.classList.add('faded');
+  });
+  // 正解ボタンを強調
+  if (correctBtn) correctBtn.classList.add('correct');
+
+  // 穴を正解で埋める
+  setHoleFilled(currentProblem.answer, correct ? 'filled-correct' : (pickedBtn ? 'filled-wrong' : 'filled-timeout'));
+
+  // 進捗ドットに反映
+  markProgress(progress.num, correct);
+  progress.num++;
+  if (correct) progress.correct++;
+
+  // 効果音 + 擬音
+  if (correct) {
+    playCorrect();
+    setTimeout(() => speakOnomatopoeia('ピンポンピンポン'), 60);
+  } else if (pickedBtn) {
+    playWrong();
+    setTimeout(() => speakOnomatopoeia('ブブー'), 80);
+  } else {
+    playTimeUp();
+    setTimeout(() => speakOnomatopoeia('デロロン'), 100);
+  }
+
+  const finishedAll = (progress.num >= TOTAL_QUESTIONS);
+
+  if (correct) {
+    updateHint('せいかい！');
+
+    // 答えの読み上げ (擬音の後にキューされる) ── 完了を待たずに大表示でユーザータップ進行
+    setTimeout(() => speakAnswer(currentProblem), 1100);
+
+    // 降下うに: C + 選択肢の合計値 (記号は 9 として)
+    const count = computeRainCount(currentProblem);
+    setTimeout(() => spawnUniRain(count), 200);
+
+    // にぎやかしの背景うにも喜ぶ
+    bgUnis.forEach((u, i) => {
+      setTimeout(() => u.triggerActions(), 80 + i * 110);
+    });
+
+    // 中央に「せいかい」を大きく表示 → タップ or 3秒で次へ
+    setTimeout(() => {
+      showResultBig('せいかい', () => {
+        speechSynthesis.cancel();
+        if (finishedAll) {
+          showFinalResult();
+        } else {
+          problemPhase = 'idle';
+          startNextProblem();
+        }
+      });
+    }, 380);
+
+  } else {
+    updateHint(pickedBtn ? 'ざんねん…' : 'タイムアップ');
+
+    // 中央に小さく表示（自動 hide なし）
+    setTimeout(() => {
+      showResultSmall(pickedBtn ? 'ざんねん' : 'タイムアップ', null);
+    }, 250);
+
+    // 「読み上げ完了」 + 「最低表示時間 1.7秒」 の両方を満たしたら次へ進む
+    let speechDone = false;
+    let minTimeDone = false;
+    let proceeded = false;
+    const tryProceed = () => {
+      if (proceeded) return;
+      if (!speechDone || !minTimeDone) return;
+      proceeded = true;
+      hideResult();
+      speechSynthesis.cancel();
+      if (finishedAll) {
+        showFinalResult();
+      } else {
+        problemPhase = 'idle';
+        startNextProblem();
+      }
+    };
+    setTimeout(() => { minTimeDone = true; tryProceed(); }, 1700);
+    setTimeout(() => {
+      speakAnswer(currentProblem, () => { speechDone = true; tryProceed(); });
+    }, 1100);
+  }
+}
+
+function timeoutResolve() {
+  resolveProblem(false, null);
+}
+
+/* ============================================================
+   タイマー & shake 制御
+   ============================================================ */
+function updateTimer(dt) {
+  if (problemPhase !== 'active') return;
+  timeLeft -= dt;
+  if (timeLeft < 0) timeLeft = 0;
+  const pct = (timeLeft / TIME_LIMIT) * 100;
+  timerFill.style.width = pct + '%';
+
+  if (timeLeft <= SHAKE_AT && !shakeStarted) {
+    shakeStarted = true;
+    timerFill.classList.add('urgent');
+    choicesRow.querySelectorAll('.choice-btn').forEach((b, i) => {
+      // 各ボタンのアニメ位相を少しずらす
+      b.style.animationDelay = (i * 0.06) + 's';
+      b.classList.add('shake');
+    });
+  }
+  // 残り3秒以下で1秒に1回ティック音
+  if (shakeStarted) {
+    lastUrgentTick += dt;
+    if (lastUrgentTick > 0.85) {
+      lastUrgentTick = 0;
+      playUrgentTick();
+    }
+  }
+
+  if (timeLeft <= 0) timeoutResolve();
+}
+
+/* ============================================================
+   ポインタ (キャンバス)
+     - 降下うにのキャッチ (タップで捕まえ・指で追従・離すと飛び散る + 数字が残る)
+     - 背景うにのタップアクション
+   ============================================================ */
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = (e.clientX !== undefined) ? e.clientX
+    : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+  const cy = (e.clientY !== undefined) ? e.clientY
+    : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+  return { x: cx - rect.left, y: cy - rect.top };
+}
+
+function onCanvasPointerDown(e) {
+  ensureAudio();
+  const pos = getCanvasPos(e);
+
+  // 1. 降下うにのキャッチを優先 (新しいうにを優先するため逆順)
+  for (let i = fallingUnis.length - 1; i >= 0; i--) {
+    const u = fallingUnis[i];
+    if (u.caught || u.life <= 0) continue;
+    const r = 30 * u.baseScale * 1.6;  // タップしやすいよう判定大きめ
+    if (Math.hypot(u.x - pos.x, u.y - pos.y) < r) {
+      u.caught = true;
+      u.pointerId = e.pointerId;
+      u.captureOffsetX = u.x - pos.x;
+      u.captureOffsetY = u.y - pos.y;
+      caughtUnis.push(u);
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+      playUni(80);
+      e.preventDefault();
+      return;
+    }
+  }
+
+  // 2. 背景うにのアクション
+  for (const u of bgUnis) {
+    if (u.hitTest(pos.x, pos.y) && !u.isPlayingActions()) {
+      u.triggerActions();
+      playUni(40);
+      e.preventDefault();
+      return;
+    }
+  }
+}
+
+function onCanvasPointerMove(e) {
+  if (caughtUnis.length === 0) return;
+  const pos = getCanvasPos(e);
+  for (const u of caughtUnis) {
+    if (u.pointerId === e.pointerId) {
+      u.x = pos.x + u.captureOffsetX;
+      u.y = pos.y + u.captureOffsetY;
+      u.vx = 0; u.vy = 0;
+      u.tx = u.x; u.ty = u.y;
+    }
+  }
+}
+
+function onCanvasPointerUp(e) {
+  let releasedAny = false;
+  for (let i = caughtUnis.length - 1; i >= 0; i--) {
+    const u = caughtUnis[i];
+    if (u.pointerId === e.pointerId) {
+      // 飛び散る初速 (ランダム方向)
+      u.caught = false;
+      u.pointerId = null;
+      const ang = Math.random() * Math.PI * 2;
+      const speed = 260 + Math.random() * 220;
+      u.vx = Math.cos(ang) * speed;
+      u.vy = Math.sin(ang) * speed * 0.6 - 140;  // やや上向きに偏らせる
+      u.rotSpeed = (Math.random() - 0.5) * 14;
+      u.passThrough = true;        // バーをすり抜ける
+      u.life = Math.min(u.life, 1.4);
+      // 数字を残す (3秒かけてフェード)
+      floatingNumbers.push(new FloatingNumber(u.x, u.y - 10, u.number));
+      caughtUnis.splice(i, 1);
+      releasedAny = true;
+    }
+  }
+  if (releasedAny) playUni(20);
+  try { canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+}
+
+canvas.addEventListener('pointerdown',   onCanvasPointerDown, { passive: false });
+canvas.addEventListener('pointermove',   onCanvasPointerMove, { passive: false });
+canvas.addEventListener('pointerup',     onCanvasPointerUp,   { passive: false });
+canvas.addEventListener('pointercancel', onCanvasPointerUp,   { passive: false });
+
+/* ============================================================
+   メインループ
+   ============================================================ */
+let lastTime = 0;
+function tick(t) {
+  const dt = lastTime ? Math.min(0.05, (t - lastTime) / 1000) : 0.016;
+  lastTime = t;
+
+  updateTimer(dt);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // 背景うに更新 & 描画
+  for (const u of bgUnis) {
+    u.update(dt);
+    u.draw(ctx);
+  }
+
+  // 降下うに (キャッチ中はstepスキップ、life切れでも caught中は消さない)
+  for (let i = fallingUnis.length - 1; i >= 0; i--) {
+    const u = fallingUnis[i];
+    u.step(dt);
+    u.update(dt);
+    u.draw(ctx);
+    if (u.caught) {
+      drawCaughtNumber(ctx, u);
+    }
+    if (!u.caught && (u.y > H + 80 || u.life <= 0)) {
+      fallingUnis.splice(i, 1);
+    }
+  }
+
+  // 浮遊数字 (指を離した跡に残る数字、3秒でフェード)
+  for (let i = floatingNumbers.length - 1; i >= 0; i--) {
+    const f = floatingNumbers[i];
+    f.update(dt);
+    f.draw(ctx);
+    if (f.life <= 0) floatingNumbers.splice(i, 1);
+  }
+
+  requestAnimationFrame(tick);
+}
+
+/* ============================================================
+   モード切替
+   ============================================================ */
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation(); e.preventDefault();
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMode = btn.dataset.mode;
+    if (problemPhase !== 'idle' && currentProblem) {
+      // 即時切替: 進行中の問題はキャンセルして次へ
+      ensureAudio();
+      speechSynthesis.cancel();
+      stopEndlessRain();
+      hideResult();
+      problemPhase = 'idle';
+      clearAllSpawnedUnis();
+      resetProgress();
+      startNextProblem();
+    }
+  });
+});
+
+/* ============================================================
+   スクロール伝播防止 (iframe対応)
+   ============================================================ */
+document.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+}, { passive: false });
+document.addEventListener('touchstart', (e) => {
+  if (!e.target.closest('button')) e.preventDefault();
+}, { passive: false });
+
+/* ============================================================
+   開始
+   ============================================================ */
+const startOverlay = document.getElementById('startOverlay');
+const startBtn = document.getElementById('startBtn');
+const startModeButtons = document.getElementById('startModeButtons');
+
+let selectedStartMode = getDefaultMode();
+
+function refreshStartModeUI() {
+  const best = loadBestScores();
+  const buttons = startModeButtons.querySelectorAll('.start-mode-btn');
+  buttons.forEach(btn => {
+    const mode = btn.dataset.mode;
+    btn.classList.toggle('selected', mode === selectedStartMode);
+    // 10/10 達成済みなら クラウンマーク (✦) を表示
+    let crown = btn.querySelector('.crown');
+    if (best[mode] >= 10) {
+      if (!crown) {
+        crown = document.createElement('span');
+        crown.className = 'crown';
+        crown.textContent = '✦';
+        btn.appendChild(crown);
+      }
+    } else if (crown) {
+      crown.remove();
+    }
+  });
+}
+
+startModeButtons.querySelectorAll('.start-mode-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    selectedStartMode = btn.dataset.mode;
+    refreshStartModeUI();
+  });
+});
+
+function begin() {
+  ensureAudio();
+  if ('speechSynthesis' in window) speechSynthesis.getVoices();
+  startOverlay.classList.add('hidden');
+  // スタート画面で選んだモードを反映
+  currentMode = selectedStartMode;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === selectedStartMode);
+  });
+  resize();
+  const start = () => {
+    resize();
+    resetProgress();
+    startNextProblem();
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start);
+  else start();
+}
+startBtn.addEventListener('click', (e) => { e.stopPropagation(); begin(); });
+// オーバーレイ全体クリックは「はじめる」ボタン以外を押した時の暴発防止のため
+// data-mode を持つボタンや start-btn の場合は begin しない
+startOverlay.addEventListener('click', (e) => {
+  if (e.target.closest('button')) return;
+  begin();
+});
+
+// 初期化: 起動時のスタート画面UI
+refreshStartModeUI();
+
+resize();
+requestAnimationFrame(tick);
+
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => {};
+}
+</script>
+</body>
+</html>

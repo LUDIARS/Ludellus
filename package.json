@@ -12,7 +12,7 @@
     "build": "npm run build:main && npm run build:preload && npm run build:renderer",
     "dev": "npm run build && electron .",
     "start": "electron .",
-    "serve": "npx --yes http-server . -p 8080 -c-1 --cors",
+    "serve": "npx --yes http-server renderer -p 8080 -c-1 --cors",
     "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.preload.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
     "cap:sync": "cap sync",
     "cap:android": "cap open android",

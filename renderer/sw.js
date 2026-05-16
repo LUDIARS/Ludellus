@@ -1,7 +1,7 @@
 // Ludellus PWA service worker。 オフライン優先 (cache-first for static, network-first for dynamic).
 // 中央 Web と連携する API 呼び出しは fetch のままパススルー (オフラインなら失敗 → score.js が sync queue に温存)。
 
-const CACHE_VERSION = "ludellus-v9";
+const CACHE_VERSION = "ludellus-v10";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -31,8 +31,8 @@ const PRECACHE_URLS = [
   "./games/uni-math/scene.js",
   "./games/uni-suika/scene.js",
   "./games/uni-writing/scene.js",
-  // sample/* は iframe で読まれる。 SW scope (renderer/) 外なので precache せず、
-  // ブラウザの通常キャッシュに任せる。
+  "./games/uni-math/index.html",
+  "./games/uni-writing/index.html",
 ];
 
 self.addEventListener("install", (event) => {
