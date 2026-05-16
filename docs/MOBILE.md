@@ -74,12 +74,13 @@ foundation 完成        + Cernere auth + sync     Pictor で render            
 - **Capacitor + Pictor WebGL2 backend** が Phase 2 の現実解 — WebView 上で Pictor WASM が動く想定
 - **Native Pictor plugin** は最終形 — iOS は MoltenVK、 Android は Vulkan native
 
-### Phase 1: PWA 化 (最小コスト)
+### Phase 1: PWA 化 (最小コスト) — **実装済み (PR #4)**
 
-- `renderer/` に `manifest.json` を追加 (アプリ名、 アイコン、 縦持ち、 standalone)
-- `service-worker.js` で `renderer/` 一式をキャッシュ (オフライン動作)
-- 検証用に `npm run serve` (静的サーバ) を追加
-- **コスト目安:** 数日
+- `renderer/manifest.webmanifest` — アプリ名・縦持ち・standalone・theme color
+- `renderer/sw.js` — service worker (cache-first 静的 + network-first API + オフライン fallback)
+- `renderer/icons/uni-icon.svg` — マスター SVG (うに 11 触手 + コア + クリーム背景)
+- `npm run serve` — 検証用 http-server (port 8080)
+- **未実施:** PNG icon の export (192/512、 SVG → PNG)、 favicon、 apple-touch-icon (`renderer/icons/README.md` に手順あり)
 
 #### manifest.json (例)
 
