@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Music Box — Toy Xylophone</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(ellipse at center 35%, #2a1f15 0%, #14100a 50%, #050302 100%);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #f4dcb0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .corner {
+    position: fixed;
+    width: 28px; height: 28px;
+    border-color: rgba(244,220,176,0.32);
+    border-style: solid;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .corner.tl { top: 14px; left: 14px;  border-width: 1px 0 0 1px; }
+  .corner.tr { top: 14px; right: 14px; border-width: 1px 1px 0 0; }
+  .corner.bl { bottom: 14px; left: 14px;  border-width: 0 0 1px 1px; }
+  .corner.br { bottom: 14px; right: 14px; border-width: 0 1px 1px 0; }
+
+  #ui {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: 22px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .title {
+    font-size: 18px;
+    letter-spacing: 0.20em;
+    line-height: 1.1;
+    text-shadow: 0 0 24px rgba(255,180,90,0.3);
+    font-variant: small-caps;
+    flex-shrink: 0;
+  }
+  .title .sub {
+    display: block;
+    font-style: italic;
+    font-size: 11px;
+    opacity: 0.55;
+    letter-spacing: 0.28em;
+    margin-top: 5px;
+    font-variant: normal;
+  }
+
+  #songs {
+    pointer-events: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+  .song-btn {
+    background: rgba(244,220,176,0.04);
+    border: 1px solid rgba(244,220,176,0.45);
+    color: #f4dcb0;
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    white-space: nowrap;
+  }
+  .song-btn:hover:not(:disabled) {
+    background: rgba(244,220,176,0.18);
+    border-color: rgba(244,220,176,0.75);
+  }
+  .song-btn.active {
+    background: #f4dcb0;
+    color: #1a0e06;
+    border-color: #f4dcb0;
+    box-shadow: 0 0 18px rgba(255,200,120,0.55);
+  }
+  .song-btn:disabled { opacity: 0.4; cursor: default; }
+
+  #note {
+    position: fixed;
+    bottom: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 56px;
+    font-style: italic;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+    z-index: 4;
+    text-shadow: 0 0 50px var(--glow, rgba(255,200,100,0.85));
+  }
+  #note.show { opacity: 1; }
+
+  #stage {
+    position: fixed;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    letter-spacing: 0.6em;
+    text-transform: uppercase;
+    opacity: 0.32;
+    z-index: 3;
+  }
+
+  @media (max-width: 720px) {
+    #ui {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 16px 16px;
+      gap: 10px;
+    }
+    .title { font-size: 14px; letter-spacing: 0.16em; }
+    .title .sub { font-size: 9.5px; letter-spacing: 0.20em; }
+    #songs {
+      justify-content: flex-start;
+      gap: 4px;
+    }
+    .song-btn {
+      font-size: 9.5px;
+      padding: 5px 8px;
+      letter-spacing: 0.10em;
+    }
+    #note { font-size: 38px; bottom: 60px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div id="ui">
+  <div class="title">
+    Music Box
+    <span class="sub">— a wooden xylophone · sampled —</span>
+  </div>
+  <div id="songs">
+    <button class="song-btn" data-song="happy-birthday" disabled>Happy Birthday</button>
+    <button class="song-btn" data-song="fate" disabled>運命</button>
+    <button class="song-btn" data-song="jingle" disabled>ジングルベル</button>
+    <button class="song-btn" data-song="twinkle" disabled>きらきらぼし</button>
+    <button class="song-btn" data-song="warblings" disabled>夕べのさえずり</button>
+  </div>
+</div>
+
+<div id="note"></div>
+<div id="stage">— op. 6 · toy xylophone —</div>
+
+<script>
+/* ============================================================
+   AUDIO — sample-based playback (user's recording, denoised)
+   ============================================================ */
+const SAMPLE_B64 = "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";
+const SAMPLE_FREQ = 698.46;  // F5
+
+let audioCtx;
+let audioBuffer = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function base64ToArrayBuffer(b64) {
+  const bin = atob(b64);
+  const buf = new ArrayBuffer(bin.length);
+  const view = new Uint8Array(buf);
+  for (let i = 0; i < bin.length; i++) view[i] = bin.charCodeAt(i);
+  return buf;
+}
+
+async function loadSample() {
+  const ctx = getCtx();
+  const arr = base64ToArrayBuffer(SAMPLE_B64);
+  audioBuffer = await ctx.decodeAudioData(arr);
+  document.querySelectorAll('.song-btn').forEach(btn => btn.disabled = false);
+}
+
+const NOTE_FREQ = {};
+(function () {
+  const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  for (let oct = 3; oct <= 7; oct++) {
+    for (let i = 0; i < 12; i++) {
+      const midi = (oct + 1) * 12 + i;
+      NOTE_FREQ[names[i] + oct] = 440 * Math.pow(2, (midi - 69) / 12);
+    }
+  }
+})();
+
+function playNote(note, gain = 0.7) {
+  if (!audioBuffer) return;
+  const ctx = getCtx();
+  const f = NOTE_FREQ[note];
+  if (!f) return;
+  const t0 = ctx.currentTime;
+
+  const src = ctx.createBufferSource();
+  src.buffer = audioBuffer;
+  src.playbackRate.value = f / SAMPLE_FREQ;
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(gain, t0);
+
+  src.connect(g);
+  g.connect(ctx.destination);
+  src.start(t0);
+}
+
+/* ============================================================
+   BARS — colors taken from the photo
+   ============================================================ */
+const NATURALS = [
+  { note: 'F5', label: 'F', color: '#dc4936', dark: '#7a1d12' },
+  { note: 'G5', label: 'G', color: '#a52220', dark: '#52100a' },
+  { note: 'A5', label: 'A', color: '#7e2670', dark: '#3e1a36' },
+  { note: 'B5', label: 'B', color: '#dadcd0', dark: '#7a7c70' },
+  { note: 'C6', label: 'C', color: '#1c3aa8', dark: '#101a4e' },
+  { note: 'D6', label: 'D', color: '#3a8a3a', dark: '#1a4218' },
+  { note: 'E6', label: 'E', color: '#e8b820', dark: '#7a5e10' },
+  { note: 'F6', label: 'F', color: '#e87530', dark: '#7a3a12' },
+  { note: 'G6', label: 'G', color: '#b22824', dark: '#62160e' },
+  { note: 'A6', label: 'A', color: '#7c2870', dark: '#42183f' },
+  { note: 'B6', label: 'B', color: '#dadcd0', dark: '#7a7c70' },
+  { note: 'C7', label: 'C', color: '#1a2870', dark: '#0a1238' },
+];
+
+const SHARPS = [
+  { note: 'F#5', afterIdx: 0, color: '#e25a30', dark: '#7a2a10' },
+  { note: 'G#5', afterIdx: 1, color: '#a52220', dark: '#52100a' },
+  { note: 'A#5', afterIdx: 2, color: '#7e2670', dark: '#3e1a36' },
+  { note: 'C#6', afterIdx: 4, color: '#1c3aa8', dark: '#101a4e' },
+  { note: 'D#6', afterIdx: 5, color: '#3a8a3a', dark: '#1a4218' },
+  { note: 'F#6', afterIdx: 7, color: '#e87530', dark: '#7a3a12' },
+  { note: 'G#6', afterIdx: 8, color: '#b22824', dark: '#62160e' },
+  { note: 'A#6', afterIdx: 9, color: '#7c2870', dark: '#42183f' },
+];
+
+function lengthFactor(idx, total) {
+  return 1 - (idx / (total - 1)) * 0.45;
+}
+
+function isLightColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return (r * 0.299 + g * 0.587 + b * 0.114) > 165;
+}
+
+function lightenColor(hex, percent) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const f = percent / 100;
+  return `rgb(${Math.min(255, r + (255 - r) * f) | 0}, ${Math.min(255, g + (255 - g) * f) | 0}, ${Math.min(255, b + (255 - b) * f) | 0})`;
+}
+
+/* ============================================================
+   CANVAS SETUP
+   ============================================================ */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  W = canvas.clientWidth = window.innerWidth;
+  H = canvas.clientHeight = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+function getLayout() {
+  // Reserved zones depend on UI layout (column on small, row on large)
+  const isSmall = W < 720;
+  const reservedTop = isSmall ? 130 : 100;
+  const reservedBottom = 110;
+
+  const availH = H - reservedTop - reservedBottom;
+  const availW = W - 40;
+
+  const numNat = NATURALS.length;
+  const barH = Math.min(28, (availH - 30) / numNat);
+  const gap = barH * 0.18;
+  const totalH = numNat * barH + (numNat - 1) * gap;
+
+  const maxNatLen = Math.min(availW * 0.42, 220);
+  const maxSharpLen = maxNatLen * 0.95;
+
+  const middleGap = 12;
+  const contentW = maxNatLen + middleGap + maxSharpLen;
+  const contentX = (W - contentW) / 2;
+  const contentY = reservedTop + (availH - totalH) / 2;
+
+  return {
+    barH, gap,
+    natStartX: contentX,
+    sharpStartX: contentX + maxNatLen + middleGap,
+    topY: contentY,
+    maxNatLen, maxSharpLen,
+    totalH,
+    contentW,
+  };
+}
+
+function getNatRect(i) {
+  const L = getLayout();
+  const len = L.maxNatLen * lengthFactor(i, NATURALS.length);
+  const y = L.topY + i * (L.barH + L.gap);
+  return { x: L.natStartX, y, w: len, h: L.barH };
+}
+
+function getSharpRect(s) {
+  const L = getLayout();
+  const yA = L.topY + s.afterIdx * (L.barH + L.gap) + L.barH / 2;
+  const yB = L.topY + (s.afterIdx + 1) * (L.barH + L.gap) + L.barH / 2;
+  const yc = (yA + yB) / 2;
+  const len = L.maxSharpLen * lengthFactor(s.afterIdx, NATURALS.length);
+  return { x: L.sharpStartX, y: yc - L.barH / 2, w: len, h: L.barH };
+}
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const barState = {};
+NATURALS.forEach(b => { barState[b.note] = { lastPressed: -Infinity, color: b.color }; });
+SHARPS.forEach(s   => { barState[s.note] = { lastPressed: -Infinity, color: s.color }; });
+
+function pressBar(note) {
+  const s = barState[note];
+  if (!s) return;
+  s.lastPressed = performance.now();
+  spawnEmbers(note);
+  spawnRipple(note);
+  playNote(note);
+
+  const note$ = document.getElementById('note');
+  const isSharp = note.includes('#');
+  const bar = NATURALS.find(b => b.note === note) || SHARPS.find(b => b.note === note);
+  const labelText = isSharp ? bar.note.replace('#', '♯') : bar.label;
+  note$.textContent = labelText;
+  note$.style.setProperty('--glow', s.color);
+  note$.classList.add('show');
+  clearTimeout(note$._t);
+  note$._t = setTimeout(() => note$.classList.remove('show'), 380);
+}
+
+/* ============================================================
+   PARTICLES
+   ============================================================ */
+const ambient = [];
+const embers = [];
+const ripples = [];
+
+for (let i = 0; i < 60; i++) {
+  ambient.push({
+    x: Math.random() * W,
+    y: Math.random() * H,
+    vy: -0.18 - Math.random() * 0.4,
+    vx: (Math.random() - 0.5) * 0.18,
+    r: 0.5 + Math.random() * 1.3,
+    a: 0.18 + Math.random() * 0.3,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+function getBarCenter(note) {
+  const nat = NATURALS.findIndex(b => b.note === note);
+  if (nat >= 0) {
+    const r = getNatRect(nat);
+    return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+  }
+  const s = SHARPS.find(b => b.note === note);
+  if (s) {
+    const r = getSharpRect(s);
+    return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+  }
+  return { x: W / 2, y: H / 2 };
+}
+
+function spawnEmbers(note) {
+  const { x, y } = getBarCenter(note);
+  const color = barState[note].color;
+  for (let i = 0; i < 14; i++) {
+    embers.push({
+      x: x + (Math.random() - 0.5) * 30,
+      y: y + (Math.random() - 0.5) * 16,
+      vx: (Math.random() - 0.5) * 1.6,
+      vy: -1.4 - Math.random() * 1.8,
+      life: 1,
+      decay: 0.013 + Math.random() * 0.018,
+      r: 1 + Math.random() * 2.2,
+      color,
+    });
+  }
+}
+
+function spawnRipple(note) {
+  const { x, y } = getBarCenter(note);
+  const color = barState[note].color;
+  ripples.push({ x, y, r: 6, life: 1, color });
+}
+
+/* ============================================================
+   DRAWING HELPERS
+   ============================================================ */
+function roundRect(c, x, y, w, h, r) {
+  if (typeof r === 'number') r = [r, r, r, r];
+  c.beginPath();
+  c.moveTo(x + r[0], y);
+  c.lineTo(x + w - r[1], y);
+  c.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+  c.lineTo(x + w, y + h - r[2]);
+  c.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+  c.lineTo(x + r[3], y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+  c.lineTo(x, y + r[0]);
+  c.quadraticCurveTo(x, y, x + r[0], y);
+  c.closePath();
+}
+
+function drawScrew(cx, cy, size = 3.0) {
+  const grad = ctx.createRadialGradient(cx - size*0.4, cy - size*0.4, 0, cx, cy, size * 1.4);
+  grad.addColorStop(0, '#fafbfc');
+  grad.addColorStop(0.5, '#a8acb2');
+  grad.addColorStop(1, '#3a3e44');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(20, 20, 20, 0.55)';
+  ctx.lineWidth = 0.7;
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.6, cy);
+  ctx.lineTo(cx + size * 0.6, cy);
+  ctx.moveTo(cx, cy - size * 0.6);
+  ctx.lineTo(cx, cy + size * 0.6);
+  ctx.stroke();
+}
+
+function drawFrame() {
+  const L = getLayout();
+  const pad = 14;
+  const topY = L.topY - pad;
+  const bottomY = L.topY + L.totalH + pad;
+  const leftX = L.natStartX - pad;
+  const topSharpRect = getSharpRect(SHARPS[0]);
+  const bottomSharpRect = getSharpRect(SHARPS[SHARPS.length - 1]);
+  const topRightX = topSharpRect.x + topSharpRect.w + pad;
+  const bottomRightX = bottomSharpRect.x + bottomSharpRect.w + pad;
+  const lastNatRect = getNatRect(NATURALS.length - 1);
+  const lastNatRightX = lastNatRect.x + lastNatRect.w + pad;
+  const trueBottomRightX = Math.max(bottomRightX, lastNatRightX);
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+  ctx.filter = 'blur(14px)';
+  ctx.beginPath();
+  ctx.moveTo(leftX + 6, topY + 8);
+  ctx.lineTo(topRightX + 6, topY + 8);
+  ctx.lineTo(trueBottomRightX + 6, bottomY + 8);
+  ctx.lineTo(leftX + 6, bottomY + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  const frameGrad = ctx.createLinearGradient(leftX, 0, trueBottomRightX, 0);
+  frameGrad.addColorStop(0, '#c8a368');
+  frameGrad.addColorStop(0.5, '#dcb878');
+  frameGrad.addColorStop(1, '#b08e58');
+  ctx.fillStyle = frameGrad;
+  ctx.beginPath();
+  ctx.moveTo(leftX, topY + 6);
+  ctx.quadraticCurveTo(leftX, topY, leftX + 6, topY);
+  ctx.lineTo(topRightX - 6, topY);
+  ctx.quadraticCurveTo(topRightX, topY, topRightX, topY + 6);
+  ctx.lineTo(trueBottomRightX, bottomY - 6);
+  ctx.quadraticCurveTo(trueBottomRightX, bottomY, trueBottomRightX - 6, bottomY);
+  ctx.lineTo(leftX + 6, bottomY);
+  ctx.quadraticCurveTo(leftX, bottomY, leftX, bottomY - 6);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(110, 70, 30, 0.18)';
+  ctx.lineWidth = 0.7;
+  for (let i = 0; i < 14; i++) {
+    const y = topY + (bottomY - topY) * (i / 14) + (i * 13 % 9);
+    ctx.beginPath();
+    ctx.moveTo(leftX - 5, y);
+    ctx.bezierCurveTo(
+      leftX + 100, y + 1.5,
+      leftX + 220, y - 1.0,
+      trueBottomRightX + 5, y + 0.8
+    );
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(70, 40, 15, 0.10)';
+  for (let i = 0; i < 30; i++) {
+    const y = topY + (bottomY - topY) * (i / 30) + Math.sin(i) * 2;
+    ctx.beginPath();
+    ctx.moveTo(leftX - 5, y);
+    ctx.lineTo(trueBottomRightX + 5, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255, 240, 200, 0.32)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(leftX + 6, topY + 0.5);
+  ctx.lineTo(topRightX - 6, topY + 0.5);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.beginPath();
+  ctx.moveTo(leftX + 6, bottomY - 0.5);
+  ctx.lineTo(trueBottomRightX - 6, bottomY - 0.5);
+  ctx.stroke();
+
+  drawVerticalRail(L.natStartX + L.maxNatLen * 0.10, topY + 4, bottomY - topY - 8, 7);
+  drawVerticalRail(L.sharpStartX - 6, topY + 4, bottomY - topY - 8, 7);
+  drawDiagonalRail(
+    topSharpRect.x + topSharpRect.w - 6, topY + 4,
+    bottomSharpRect.x + bottomSharpRect.w - 6, bottomSharpRect.y + bottomSharpRect.h + 8,
+    7
+  );
+}
+
+function drawVerticalRail(cx, y, h, w) {
+  const grad = ctx.createLinearGradient(cx - w/2, 0, cx + w/2, 0);
+  grad.addColorStop(0, '#5a3a1c');
+  grad.addColorStop(0.5, '#3a2410');
+  grad.addColorStop(1, '#1f1208');
+  ctx.fillStyle = grad;
+  roundRect(ctx, cx - w/2, y, w, h, 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255, 220, 170, 0.15)';
+  ctx.fillRect(cx - w/2 + 1, y + 1, 1, h - 2);
+}
+
+function drawDiagonalRail(x1, y1, x2, y2, w) {
+  ctx.save();
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  const length = Math.hypot(x2 - x1, y2 - y1);
+  ctx.translate(x1, y1);
+  ctx.rotate(angle);
+  const grad = ctx.createLinearGradient(0, -w/2, 0, w/2);
+  grad.addColorStop(0, '#5a3a1c');
+  grad.addColorStop(0.5, '#3a2410');
+  grad.addColorStop(1, '#1f1208');
+  ctx.fillStyle = grad;
+  roundRect(ctx, 0, -w/2, length, w, 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawBar(rect, bar, isSharp, screwOffsets) {
+  const s = barState[bar.note];
+  const now = performance.now();
+  const elapsed = now - s.lastPressed;
+
+  const env = (elapsed < 1000)
+    ? Math.pow(1 - elapsed / 1000, 1.4)
+    : 0;
+
+  let vibX = 0;
+  if (elapsed >= 0 && elapsed < 700) {
+    const tt = elapsed / 1000;
+    vibX = 4 * Math.exp(-tt * 9) * Math.cos(tt * 42);
+  }
+
+  const x = rect.x;
+  const y = rect.y + vibX * 0.4;
+  const w = rect.w;
+  const h = rect.h;
+
+  ctx.save();
+  ctx.fillStyle = `rgba(0, 0, 0, ${0.5 - env * 0.2})`;
+  ctx.filter = 'blur(5px)';
+  roundRect(ctx, x + 2, y + h - 2, w, 8, 4);
+  ctx.fill();
+  ctx.restore();
+
+  if (env > 0.02) {
+    const cx = x + w / 2, cy = y + h / 2;
+    const radius = Math.max(w, h) * 1.2;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    const a = Math.floor(env * 0.7 * 255).toString(16).padStart(2, '0');
+    grad.addColorStop(0, bar.color + a);
+    grad.addColorStop(1, bar.color + '00');
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+  }
+
+  const bodyGrad = ctx.createLinearGradient(x, y, x, y + h);
+  bodyGrad.addColorStop(0,    bar.dark);
+  bodyGrad.addColorStop(0.25, bar.color);
+  bodyGrad.addColorStop(0.5,  lightenColor(bar.color, 12 + env * 30));
+  bodyGrad.addColorStop(0.75, bar.color);
+  bodyGrad.addColorStop(1,    bar.dark);
+  ctx.fillStyle = bodyGrad;
+  roundRect(ctx, x, y, w, h, 3);
+  ctx.fill();
+
+  ctx.fillStyle = `rgba(255, 255, 255, ${0.32 - env * 0.15})`;
+  ctx.fillRect(x + 3, y + 2, w - 6, 1);
+
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+  ctx.fillRect(x + 3, y + h - 2, w - 6, 1);
+
+  const screwSize = Math.min(2.8, h * 0.18);
+  const screwY = y + h / 2;
+  drawScrew(x + screwOffsets.left, screwY, screwSize);
+  drawScrew(x + screwOffsets.right, screwY, screwSize);
+
+  const labelText = isSharp ? bar.note.replace('#', '♯').replace(/[0-9]/g, '') : bar.label;
+  const fontSize = Math.max(9, h * 0.55);
+  ctx.font = `bold ${fontSize}px Georgia`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  const labelX = x + 8;
+  const labelY = y + h / 2;
+
+  const isLight = isLightColor(bar.color);
+  ctx.fillStyle = isLight
+    ? `rgba(60, 40, 20, ${0.55 + env * 0.3})`
+    : `rgba(0, 0, 0, ${0.4})`;
+  ctx.fillText(labelText, labelX + 0.7, labelY + 0.7);
+  ctx.fillStyle = isLight
+    ? `rgba(20, 12, 5, ${0.85 + env * 0.15})`
+    : `rgba(255, 240, 220, ${0.78 + env * 0.2})`;
+  ctx.fillText(labelText, labelX, labelY);
+
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+}
+
+function drawXylophone() {
+  drawFrame();
+
+  for (const s of SHARPS) {
+    const r = getSharpRect(s);
+    drawBar(r, s, true, {
+      left: r.w * 0.18,
+      right: r.w * 0.82,
+    });
+  }
+
+  for (let i = 0; i < NATURALS.length; i++) {
+    const r = getNatRect(i);
+    drawBar(r, NATURALS[i], false, {
+      left: r.w * 0.36,
+      right: r.w * 0.85,
+    });
+  }
+}
+
+function drawAmbient(t) {
+  for (const p of ambient) {
+    p.x += p.vx + Math.sin(t * 0.001 + p.phase) * 0.08;
+    p.y += p.vy;
+    if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+    if (p.x < -10) p.x = W + 10;
+    if (p.x > W + 10) p.x = -10;
+    ctx.fillStyle = `rgba(255, 200, 140, ${p.a})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawEmbers() {
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = embers.length - 1; i >= 0; i--) {
+    const e = embers[i];
+    e.x += e.vx;
+    e.y += e.vy;
+    e.vy += 0.02;
+    e.vx *= 0.99;
+    e.life -= e.decay;
+    if (e.life <= 0) { embers.splice(i, 1); continue; }
+    ctx.fillStyle = e.color + Math.floor(e.life * 255).toString(16).padStart(2, '0');
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.r * (0.5 + e.life * 0.8), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawRipples() {
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    r.r += 1.5;
+    r.life -= 0.025;
+    if (r.life <= 0) { ripples.splice(i, 1); continue; }
+    const a = Math.floor(r.life * 0.6 * 255).toString(16).padStart(2, '0');
+    ctx.strokeStyle = r.color + a;
+    ctx.lineWidth = 1.8 * r.life;
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function frame(t) {
+  ctx.clearRect(0, 0, W, H);
+
+  const spot = ctx.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.7);
+  spot.addColorStop(0, 'rgba(120, 80, 40, 0.20)');
+  spot.addColorStop(0.4, 'rgba(60, 40, 20, 0.07)');
+  spot.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, W, H);
+
+  drawAmbient(t);
+  drawXylophone();
+  drawRipples();
+  drawEmbers();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ============================================================
+   SONGS
+   format: [note, beats]   note='REST' for silence
+   All transposed to fit our F5..C7 range.
+   ============================================================ */
+const SONGS = {
+  'happy-birthday': {
+    title: 'Happy Birthday',
+    bpm: 116,
+    notes: [
+      ['G5', 0.75], ['G5', 0.25], ['A5', 1], ['G5', 1], ['C6', 1], ['B5', 2],
+      ['G5', 0.75], ['G5', 0.25], ['A5', 1], ['G5', 1], ['D6', 1], ['C6', 2],
+      ['G5', 0.75], ['G5', 0.25], ['G6', 1], ['E6', 1], ['C6', 1], ['B5', 1], ['A5', 2],
+      ['F6', 0.75], ['F6', 0.25], ['E6', 1], ['C6', 1], ['D6', 1], ['C6', 2.5],
+    ],
+  },
+  // Beethoven Symphony No. 5 opening — transposed up 1 octave to fit our range.
+  // Original key: C minor (G G G E♭ | F F F D). E♭ = D♯, which we have as D♯6.
+  'fate': {
+    title: '運命',
+    bpm: 108,
+    notes: [
+      ['REST', 0.4],
+      ['G6', 0.5], ['G6', 0.5], ['G6', 0.5], ['D#6', 3.0],
+      ['REST', 0.4],
+      ['F6', 0.5], ['F6', 0.5], ['F6', 0.5], ['D6', 3.5],
+    ],
+  },
+  // Jingle Bells (chorus) in C major, played in C6 octave
+  'jingle': {
+    title: 'ジングルベル',
+    bpm: 130,
+    notes: [
+      // "Jingle bells, jingle bells, jingle all the way"
+      ['E6', 0.5], ['E6', 0.5], ['E6', 1],
+      ['E6', 0.5], ['E6', 0.5], ['E6', 1],
+      ['E6', 0.5], ['G6', 0.5], ['C6', 0.75], ['D6', 0.25], ['E6', 2],
+      // "Oh, what fun it is to ride in a one-horse open sleigh"
+      ['F6', 0.5], ['F6', 0.5], ['F6', 0.75], ['F6', 0.25],
+      ['F6', 0.5], ['E6', 0.5], ['E6', 0.5], ['E6', 0.25], ['E6', 0.25],
+      ['G6', 0.5], ['G6', 0.5], ['F6', 0.5], ['D6', 0.5],
+      ['C6', 2.5],
+      ['REST', 0.5],
+      // Repeat with different ending
+      ['E6', 0.5], ['E6', 0.5], ['E6', 1],
+      ['E6', 0.5], ['E6', 0.5], ['E6', 1],
+      ['E6', 0.5], ['G6', 0.5], ['C6', 0.75], ['D6', 0.25], ['E6', 2],
+      ['F6', 0.5], ['F6', 0.5], ['F6', 0.75], ['F6', 0.25],
+      ['F6', 0.5], ['E6', 0.5], ['E6', 0.5], ['E6', 0.5],
+      ['G6', 0.5], ['G6', 0.5], ['F6', 0.5], ['D6', 0.5],
+      ['C6', 2.5],
+    ],
+  },
+  // Twinkle Twinkle Little Star in C major, in C6 octave
+  'twinkle': {
+    title: 'きらきらぼし',
+    bpm: 100,
+    notes: [
+      ['C6', 1], ['C6', 1], ['G6', 1], ['G6', 1], ['A6', 1], ['A6', 1], ['G6', 2],
+      ['F6', 1], ['F6', 1], ['E6', 1], ['E6', 1], ['D6', 1], ['D6', 1], ['C6', 2],
+      ['G6', 1], ['G6', 1], ['F6', 1], ['F6', 1], ['E6', 1], ['E6', 1], ['D6', 2],
+      ['G6', 1], ['G6', 1], ['F6', 1], ['F6', 1], ['E6', 1], ['E6', 1], ['D6', 2],
+      ['C6', 1], ['C6', 1], ['G6', 1], ['G6', 1], ['A6', 1], ['A6', 1], ['G6', 2],
+      ['F6', 1], ['F6', 1], ['E6', 1], ['E6', 1], ['D6', 1], ['D6', 1], ['C6', 2],
+    ],
+  },
+  // 夕べのさえずり (Warblings at Eve / Vöglein's Abendlied Op.71) by Brinley Richards
+  // Original: E♭ major, Andantino. PLACEHOLDER — needs user-provided melody
+  // for accuracy. Below is a generic gentle 8-bar phrase to indicate "this song slot".
+  'warblings': {
+    title: '夕べのさえずり',
+    bpm: 80,
+    notes: [
+      // sketch: gentle ascending then descending bird-like phrase in Eb major
+      ['A#5', 0.5], ['G5', 0.5], ['F5', 1],
+      ['G5', 0.5], ['A#5', 0.5], ['D#6', 1.5],
+      ['REST', 0.5],
+      ['C6', 0.5], ['A#5', 0.5], ['G#5', 0.5], ['G5', 0.5],
+      ['F5', 1.5], ['REST', 0.5],
+      ['F6', 0.5], ['D#6', 0.5], ['C6', 1],
+      ['A#5', 0.5], ['G#5', 0.5], ['G5', 1],
+      ['F5', 2],
+    ],
+  },
+};
+
+/* ============================================================
+   PLAYBACK CONTROL with abort token
+   ============================================================ */
+let currentToken = 0;
+let currentSongKey = null;
+
+async function playSong(songKey) {
+  const song = SONGS[songKey];
+  if (!song || !audioBuffer) return;
+
+  const myToken = ++currentToken;
+  currentSongKey = songKey;
+
+  // Update button states
+  document.querySelectorAll('.song-btn').forEach(btn => {
+    if (btn.dataset.song === songKey) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+
+  await getCtx().resume();
+  await new Promise(r => setTimeout(r, 350));
+  if (myToken !== currentToken) return;
+
+  const beatMs = 60000 / song.bpm;
+  for (const [note, beats] of song.notes) {
+    if (myToken !== currentToken) return;
+    if (note !== 'REST') {
+      pressBar(note);
+    }
+    await new Promise(r => setTimeout(r, beats * beatMs));
+  }
+
+  // Done — clear active state if still our token
+  if (myToken === currentToken) {
+    setTimeout(() => {
+      if (myToken === currentToken) {
+        document.querySelectorAll('.song-btn').forEach(btn => btn.classList.remove('active'));
+        currentSongKey = null;
+      }
+    }, 1200);
+  }
+}
+
+document.querySelectorAll('.song-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    if (!audioBuffer) await loadSample();
+    playSong(btn.dataset.song);
+  });
+});
+
+async function init() {
+  try {
+    await loadSample();
+  } catch (e) {
+    console.error('Failed to load sample:', e);
+  }
+}
+document.addEventListener('click', async () => {
+  if (!audioBuffer) await init();
+}, { once: true });
+document.addEventListener('touchstart', async () => {
+  if (!audioBuffer) await init();
+}, { once: true });
+init().catch(() => {});
+
+/* ============================================================
+   TAP / CLICK to play manually
+   ============================================================ */
+canvas.addEventListener('pointerdown', async (e) => {
+  await getCtx().resume();
+  if (!audioBuffer) { try { await loadSample(); } catch {} }
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+
+  for (const s of SHARPS) {
+    const r = getSharpRect(s);
+    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
+      pressBar(s.note);
+      return;
+    }
+  }
+  for (let i = 0; i < NATURALS.length; i++) {
+    const r = getNatRect(i);
+    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
+      pressBar(NATURALS[i].note);
+      return;
+    }
+  }
+});
+</script>
+</body>
+</html>

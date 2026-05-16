@@ -1,0 +1,211 @@
+/*
+ * UniLand 共通テーマ。 sample/uni-writing-game / uni-math の見た目をベースにする。
+ *
+ * 重要原則:
+ *   1. クリーム紙 + 濃茶インク + うにオレンジの 3 色を基調にする
+ *   2. ダークモード耐性 — body 経由の背景は崩れることがあるので、 #stage 自身に固定背景を持たせる
+ *      (uni-math v8 で確立した「自前不透明レイヤー」 パターン)
+ *   3. モバイル iframe では touch-action: none + overscroll-behavior: none を全要素既定
+ *   4. フォントは Zen Maru Gothic を優先 (font-family は HTML 側で読み込む)
+ */
+
+/* ── ダークモード抑止 ─────────────────────────────── */
+html { color-scheme: light only; }
+* { forced-color-adjust: none; }
+
+button, input, select, textarea {
+  color: inherit;
+  background-color: transparent;
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+/* ── 共通変数 ───────────────────────────────────── */
+:root {
+  color-scheme: light only;
+
+  /* 紙地と影 */
+  --cream: #f7f1e8;
+  --cream-soft: #efe6d6;
+  --paper-shadow: rgba(64, 39, 18, 0.08);
+
+  /* インク (テキスト・線) */
+  --ink: #2a2118;
+  --ink-dim: #6b5a48;
+
+  /* うにブランド */
+  --uni-orange: #ff7a3a;
+  --uni-coral: #f04a2c;
+  --uni-deep: #b32616;
+  --uni-glow: rgba(255, 122, 58, 0.45);
+
+  /* 補助色 */
+  --accent-purple: #7e57c2;
+  --accent-yellow: #f0bb38;
+  --warn: #d04f2e;
+  --ok: #3fa66a;
+
+  --radius: 12px;
+  --radius-lg: 18px;
+  --pad-y: 0.6rem;
+  --pad-x: 1rem;
+  --line: rgba(64, 39, 18, 0.15);
+
+  font-family: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic", "Segoe UI", sans-serif;
+}
+
+/* ── reset & global ─────────────────────────────── */
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: var(--cream);
+  color: var(--ink);
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* ── #stage — 自前不透明レイヤー (ダークモード耐性) ── */
+.uniland-stage {
+  position: fixed;
+  inset: 0;
+  color: #2a2118;
+  background-color: #f7f1e8;
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(255, 174, 110, 0.18), transparent 60%),
+    radial-gradient(ellipse at 80% 90%, rgba(255, 122, 58, 0.10), transparent 55%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.2  0 0 0 0 0.08  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-blend-mode: multiply;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* ── ボタン共通 ─────────────────────────────────── */
+.uniland-btn {
+  padding: var(--pad-y) var(--pad-x);
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ffffff;
+  background: linear-gradient(180deg, var(--uni-orange) 0%, var(--uni-coral) 100%);
+  box-shadow: 0 4px 0 var(--uni-deep), 0 6px 16px var(--uni-glow);
+  cursor: pointer;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.uniland-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--uni-deep), 0 3px 8px var(--uni-glow);
+}
+.uniland-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.uniland-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 2px solid var(--line);
+  box-shadow: none;
+}
+
+/* ── パネル共通 (選択肢ボタン等) ─────────────────── */
+.uniland-panel {
+  background: linear-gradient(180deg, #fffaf1 0%, #f3e8d2 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 12px var(--paper-shadow), inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+  padding: 1rem 1.2rem;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 2rem;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.uniland-panel.is-shaking {
+  animation: uniland-shake 0.32s infinite;
+}
+@keyframes uniland-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-3px) rotate(-1deg); }
+  50% { transform: translateX(3px) rotate(1deg); }
+  75% { transform: translateX(-2px) rotate(-0.5deg); }
+}
+
+/* ── 結果オーバーレイ ───────────────────────────── */
+.uniland-result {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;       /* 背景の Canvas にタップを通す */
+  z-index: 50;
+}
+.uniland-result__text {
+  pointer-events: auto;
+  font-weight: 900;
+  text-align: center;
+  color: var(--uni-deep);
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.9),
+    0 0 18px var(--uni-glow);
+  animation: uniland-pop 0.45s cubic-bezier(0.2, 1.6, 0.6, 1) both;
+}
+.uniland-result__text--big { font-size: 88px; }
+.uniland-result__text--small { font-size: 40px; color: var(--ink-dim); }
+@keyframes uniland-pop {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1.0); opacity: 1; }
+}
+
+/* ── 単語/問題行 (uni-writing-game 由来) ──────────── */
+.uniland-word { display: flex; gap: 0.4rem; justify-content: center; }
+.uniland-word.is-speaking { animation: uniland-breathe 1.4s ease-in-out infinite; }
+.uniland-word .char { transition: transform 120ms ease, color 120ms ease; }
+.uniland-word .char.is-now-speaking { animation: uniland-char-pop 0.5s ease both; color: var(--uni-deep); }
+@keyframes uniland-breathe {
+  0%, 100% { transform: scale(1.0); }
+  50% { transform: scale(1.06); }
+}
+@keyframes uniland-char-pop {
+  0% { transform: scale(1.0); }
+  50% { transform: scale(1.32); }
+  100% { transform: scale(1.1); }
+}
+
+/* ── 進捗ドット (uni-math 由来) ──────────────────── */
+.uniland-progress { display: flex; gap: 0.4rem; }
+.uniland-progress__dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(64, 39, 18, 0.15);
+  border: 2px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.uniland-progress__dot.is-current { border-color: var(--uni-orange); }
+.uniland-progress__dot.is-correct { background: var(--ok); }
+.uniland-progress__dot.is-wrong { background: var(--warn); }
+
+/* ── トースト ──────────────────────────────────── */
+.uniland-toast {
+  position: fixed; left: 50%; bottom: 8%;
+  transform: translateX(-50%);
+  background: rgba(42, 33, 24, 0.85);
+  color: #fffaf1;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  z-index: 80;
+}
+.uniland-toast.is-show { opacity: 1; }
