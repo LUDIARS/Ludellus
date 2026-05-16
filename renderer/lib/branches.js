@@ -4,6 +4,7 @@
 // Phase 1 はルールベースのみ (Claude API は呼ばない)。 docs/AI-MOD-BUTTON.md 第 4 節の選択肢 A 相当。
 
 import { getAllScores } from "./score.js";
+import { defaultUnitTags } from "./curriculum.js";
 
 const STORAGE_KEY = "ludellus.branches.v1";
 
@@ -66,7 +67,7 @@ export function getOrCreateMain(baseGameId, mode) {
     parentBranchId: null,
     mode,
     generationParams: { kind: "main", appliedDeltas: [] },
-    curriculumUnits: [],
+    curriculumUnits: defaultUnitTags(baseGameId, mode),
     createdAt: new Date().toISOString(),
     scoreSnapshot: getAllScores(baseGameId),
     payload: {},
@@ -194,6 +195,90 @@ export function applyRule(parentBranchId, ruleKey) {
   store.byId[child.id] = child;
   persist();
   return child;
+}
+
+/**
+ * 学力プロファイル — 全ゲームの best/total から「習熟度合い」 をざっくり 4 段階で出す。
+ * 単元タグごとに集計するので、 spec/manabi-no-tabibito.md の単元マップと結合できる。
+ *
+ * 戻り値: { [unitId]: { best, total, ratio, level } }
+ *   level: "untouched" | "learning" | "competent" | "mastered"
+ */
+export function getAbilityProfile() {
+  const store = load();
+  const allBranches = Object.values(store.byId);
+
+  // game + mode → ベストスコア
+  /** @type {Map<string, { best: number, total: number }>} */
+  const byKey = new Map();
+  for (const b of allBranches) {
+    const key = `${b.baseGameId}#${b.mode}`;
+    const snap = b.scoreSnapshot?.[b.mode];
+    if (!snap) continue;
+    const prev = byKey.get(key);
+    if (!prev || snap.best > prev.best) byKey.set(key, { best: snap.best, total: snap.total });
+  }
+
+  // 各ブランチの curriculumUnits を集計 (同じ unit に複数 branch が紐つく場合は max)
+  /** @type {Record<string, { best: number, total: number, ratio: number, level: string }>} */
+  const out = {};
+  for (const b of allBranches) {
+    const key = `${b.baseGameId}#${b.mode}`;
+    const score = byKey.get(key);
+    if (!score) continue;
+    const ratio = score.total > 0 ? score.best / score.total : 0;
+    for (const unitId of b.curriculumUnits) {
+      const prev = out[unitId];
+      if (!prev || ratio > prev.ratio) {
+        out[unitId] = {
+          best: score.best,
+          total: score.total,
+          ratio,
+          level: levelFromRatio(ratio),
+        };
+      }
+    }
+  }
+  return out;
+}
+
+function levelFromRatio(r) {
+  if (r >= 0.9) return "mastered";
+  if (r >= 0.6) return "competent";
+  if (r > 0)    return "learning";
+  return "untouched";
+}
+
+/**
+ * main 復帰のためのステップ。 現在ブランチから親をたどって main までの delta 一覧を返す。
+ * 各ステップを「外す改修」 と読み替えれば子供向けに「○○を はずす」「△△を はずす」 と提示できる。
+ */
+export function stepsToMain(currentBranchId) {
+  const path = pathToMain(currentBranchId);
+  // path[0] = current, path[末尾] = main
+  // i 番目から i+1 番目への移動 = i の appliedDeltas の最後を外す
+  const steps = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const here = path[i];
+    const lastDelta = here.generationParams.appliedDeltas[here.generationParams.appliedDeltas.length - 1];
+    if (!lastDelta) continue;
+    steps.push({
+      fromId: here.id,
+      toId: path[i + 1].id,
+      removeDelta: lastDelta,
+      humanLabel: humanReadableDelta(lastDelta),
+    });
+  }
+  return steps;
+}
+
+function humanReadableDelta(deltaKey) {
+  switch (deltaKey) {
+    case "easier":    return "「やさしく」 を はずす";
+    case "harder":    return "「むずかしく」 を はずす";
+    case "kanji-mix": return "「漢字まぜ」 を はずす";
+    default:          return deltaKey;
+  }
 }
 
 /**

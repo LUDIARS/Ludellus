@@ -11,3 +11,4 @@ export * from "./render.js";
 export * from "./scene.js";
 export * from "./scene-manager.js";
 export * from "./branches.js";
+export * from "./curriculum.js";
