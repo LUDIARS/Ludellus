@@ -7,3 +7,14 @@ data/captures/
 *.log
 .DS_Store
 Thumbs.db
+
+# Capacitor native projects (cap add で生成、 native toolchain 必要)
+android/
+ios/
+
+# Capacitor build outputs
+.gradle/
+build/
+*.apk
+*.ipa
+*.keystore

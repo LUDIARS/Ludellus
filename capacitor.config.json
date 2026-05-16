@@ -1,0 +1,36 @@
+{
+  "appId": "com.ludiars.ludellus",
+  "appName": "Ludellus",
+  "webDir": "renderer",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#f7f1e8",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "backgroundColor": "#f7f1e8"
+    },
+    "App": {
+      "backButtonExitApp": false
+    },
+    "ScreenOrientation": {
+      "orientation": "portrait"
+    }
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": "release.keystore",
+      "keystoreAlias": "ludellus"
+    }
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}
