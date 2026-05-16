@@ -1,0 +1,81 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent-2);
+}
+
+.metric {
+  flex: 1;
+  font-family: ui-monospace, "JetBrains Mono", Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.controls { display: flex; gap: 0.5rem; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 3.2rem);
+}
+
+.sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 0.8rem;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 0 0 0.6rem;
+}
+
+.mockup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.mockup-list .empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+}
+.mockup-item {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.mockup-item:hover { border-color: var(--accent); }
+.mockup-item.active { border-color: var(--accent-2); background: #2c2547; }
+.mockup-item .desc { font-size: 0.78rem; color: var(--text-dim); }
+
+.viewer {
+  background: #050a14;
+}
+.viewer iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}

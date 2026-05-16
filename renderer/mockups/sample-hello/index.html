@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hello UniLand</title>
+    <style>
+      body {
+        font-family: -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", sans-serif;
+        display: grid;
+        place-items: center;
+        height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #f0f9ff 0%, #fef3c7 100%);
+      }
+      .card {
+        background: #fff;
+        border-radius: 18px;
+        padding: 2rem 2.5rem;
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+        text-align: center;
+      }
+      h1 { margin: 0 0 0.5rem; color: #1e293b; }
+      p { margin: 0; color: #475569; }
+      button {
+        margin-top: 1rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        border: none;
+        background: #38bdf8;
+        color: #052235;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #count { font-weight: 700; color: #db2777; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>🎓 Hello UniLand</h1>
+      <p>scaffold が動いていることを確認するモックアップです</p>
+      <p>クリック回数: <span id="count">0</span></p>
+      <button id="btn">ためしに押す</button>
+    </div>
+    <script>
+      const el = document.getElementById("count");
+      let n = 0;
+      document.getElementById("btn").addEventListener("click", () => {
+        n++;
+        el.textContent = String(n);
+      });
+    </script>
+  </body>
+</html>

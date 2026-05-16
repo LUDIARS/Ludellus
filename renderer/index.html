@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; img-src 'self' data:;" />
+    <title>UniLand</title>
+    <link rel="stylesheet" href="styles/foundation.css" />
+    <link rel="stylesheet" href="styles/app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">🌐 UniLand</div>
+      <div class="metric" id="metric">入力監視: 停止中</div>
+      <div class="controls">
+        <button id="btnStart" class="foundation-btn">▶ 監視開始</button>
+        <button id="btnStop" class="foundation-btn foundation-btn--ghost" disabled>■ 停止</button>
+      </div>
+    </header>
+    <main class="layout">
+      <aside class="sidebar">
+        <h2>モックアップ</h2>
+        <ul id="mockupList" class="mockup-list">
+          <li class="empty">読み込み中…</li>
+        </ul>
+      </aside>
+      <section class="viewer">
+        <iframe id="mockupFrame" sandbox="allow-scripts allow-pointer-lock" src="about:blank"></iframe>
+      </section>
+    </main>
+    <script type="module" src="../dist/renderer/app.js"></script>
+  </body>
+</html>

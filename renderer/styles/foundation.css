@@ -1,0 +1,56 @@
+/* Foundation UI 共通変数 — LUDIARS 全 Web フロントエンドの最小サブセット。
+   本格対応時は LUDIARS/Foundation の token 一式を持ってくる。 */
+:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --panel-2: #273449;
+  --line: #334155;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --accent: #38bdf8;
+  --accent-2: #a78bfa;
+  --warn: #fbbf24;
+  --radius: 10px;
+  --pad-y: 0.55rem;
+  --pad-x: 0.85rem;
+  font-family: -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
+}
+
+.foundation-btn {
+  background: var(--accent);
+  color: #052235;
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--pad-y) var(--pad-x);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+.foundation-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.foundation-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.foundation-btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.foundation-form input,
+.foundation-form select,
+.foundation-form textarea {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--pad-y) var(--pad-x);
+  font-size: 0.95rem;
+}

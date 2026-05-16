@@ -1,0 +1,7 @@
+{
+  "id": "sample-hello",
+  "title": "Hello UniLand",
+  "description": "scaffold 動作確認用の最小モックアップ",
+  "entry": "index.html",
+  "tags": ["sample"]
+}
