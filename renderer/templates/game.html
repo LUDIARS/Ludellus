@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light only" />
+    <meta name="supported-color-schemes" content="light" />
+    <meta name="theme-color" content="#f7f1e8" />
+    <title>UniLand Game Template</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" />
+    <link rel="stylesheet" href="../lib/theme.css" />
+    <style>
+      .stage-header {
+        padding: 0.8rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      .stage-title { font-weight: 900; color: var(--ink); font-size: 1.4rem; }
+      .stage-progress { margin-left: auto; }
+      .stage-canvas-wrap {
+        flex: 1;
+        position: relative;
+        margin: 0.4rem 1rem 1rem;
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        overscroll-behavior: none;
+      }
+      .stage-footer {
+        padding: 0.6rem 1rem 1rem;
+        display: flex;
+        gap: 0.6rem;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage" class="uniland-stage">
+      <header class="stage-header">
+        <div class="stage-title">🎓 ゲーム タイトル</div>
+        <div class="stage-progress uniland-progress" id="progress"></div>
+      </header>
+
+      <main class="stage-canvas-wrap">
+        <canvas id="game" width="800" height="600"></canvas>
+      </main>
+
+      <footer class="stage-footer">
+        <button class="uniland-btn" id="btnStart">▶ はじめる</button>
+        <button class="uniland-btn uniland-btn--ghost" id="btnReset">リセット</button>
+      </footer>
+
+      <div class="uniland-result" id="result" hidden>
+        <div class="uniland-result__text uniland-result__text--big" id="resultText">せいかい</div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        Uni, createMainUni, createBackgroundTrio,
+        speak, cancel as cancelSpeak,
+        playCorrect, playWrong, playTimeout, playTick,
+        startUniLoop, stopUniLoop, unlock,
+        installTouchGuard, getOrientation,
+        getBestScore, saveScore, hasAttainedFullScore,
+      } from "../lib/index.js";
+
+      // ── 初期化 ─────────────────────────────────────
+      installTouchGuard();
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const result = document.getElementById("result");
+      const resultText = document.getElementById("resultText");
+      const progress = document.getElementById("progress");
+
+      function resize() {
+        const r = canvas.parentElement.getBoundingClientRect();
+        canvas.width = r.width * devicePixelRatio;
+        canvas.height = r.height * devicePixelRatio;
+        canvas.style.width = r.width + "px";
+        canvas.style.height = r.height + "px";
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+      }
+      window.addEventListener("resize", resize);
+      resize();
+
+      // ── うに配置 ──────────────────────────────────
+      let mainUni = createMainUni(canvas.width / devicePixelRatio, canvas.height / devicePixelRatio);
+      let bgUnis = createBackgroundTrio(canvas.width / devicePixelRatio, canvas.height / devicePixelRatio);
+
+      // ── 進捗ドット (10 問構成の例) ────────────────
+      const TOTAL = 10;
+      function renderProgress(current, results) {
+        progress.innerHTML = "";
+        for (let i = 0; i < TOTAL; i++) {
+          const d = document.createElement("div");
+          d.className = "uniland-progress__dot";
+          if (i === current) d.classList.add("is-current");
+          if (results[i] === "ok") d.classList.add("is-correct");
+          if (results[i] === "ng") d.classList.add("is-wrong");
+          progress.appendChild(d);
+        }
+      }
+      renderProgress(0, []);
+
+      // ── メインループ ──────────────────────────────
+      let last = performance.now();
+      function tick(now) {
+        const dt = (now - last) / 1000;
+        last = now;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        mainUni.update(dt, now);
+        mainUni.draw(ctx);
+        for (const u of bgUnis) {
+          u.update(dt, now);
+          u.draw(ctx);
+        }
+
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      // ── 入力 ──────────────────────────────────────
+      canvas.addEventListener("pointerdown", (e) => {
+        const r = canvas.getBoundingClientRect();
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        for (const u of bgUnis) {
+          if (u.hitTest(x, y)) u.triggerActions(performance.now());
+        }
+        mainUni.reachToward(x, y);
+      });
+      canvas.addEventListener("pointermove", (e) => {
+        const r = canvas.getBoundingClientRect();
+        mainUni.reachToward(e.clientX - r.left, e.clientY - r.top);
+      });
+      canvas.addEventListener("pointerup", () => mainUni.releaseReach());
+
+      // ── ボタン ────────────────────────────────────
+      document.getElementById("btnStart").addEventListener("click", () => {
+        unlock(); // AudioContext ロック解除
+        result.hidden = true;
+        // ここで実ゲームのループ開始
+      });
+      document.getElementById("btnReset").addEventListener("click", () => {
+        cancelSpeak();
+        stopUniLoop();
+        result.hidden = true;
+      });
+
+      // ── サンプル: 正解時の演出 (実ゲームでは適切なタイミングで呼ぶ) ──
+      window._demoCorrect = function () {
+        playCorrect();
+        for (const u of bgUnis) u.triggerActions(performance.now());
+        speak("せいかい", { rate: 1.0 });
+        resultText.textContent = "せいかい";
+        resultText.className = "uniland-result__text uniland-result__text--big";
+        result.hidden = false;
+        setTimeout(() => { result.hidden = true; }, 3000);
+      };
+    </script>
+  </body>
+</html>
