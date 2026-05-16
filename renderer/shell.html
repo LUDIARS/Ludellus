@@ -78,6 +78,64 @@
         z-index: 30;
       }
       .shell-fade.is-fading { opacity: 1; }
+
+      /* AI 改修 modal */
+      .ai-mod-modal {
+        position: fixed; inset: 0;
+        background: rgba(42, 33, 24, 0.55);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 100;
+      }
+      .ai-mod-modal[hidden] { display: none; }
+      .ai-mod-modal__inner {
+        background: var(--cream);
+        border-radius: var(--radius-lg);
+        padding: 1.6rem 1.8rem;
+        max-width: 480px;
+        width: 92vw;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+        display: flex; flex-direction: column; gap: 1rem;
+      }
+      .ai-mod-modal__title {
+        font-weight: 900;
+        color: var(--uni-deep);
+        font-size: 1.1rem;
+      }
+      .ai-mod-modal__rules {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+      }
+      .ai-mod-modal__rule {
+        background: var(--panel, #fffaf1);
+        background: linear-gradient(180deg, #fffaf1 0%, #f3e8d2 100%);
+        border: 2px solid transparent;
+        border-radius: var(--radius);
+        padding: 0.8rem;
+        cursor: pointer;
+        text-align: left;
+      }
+      .ai-mod-modal__rule:hover { border-color: var(--uni-orange); }
+      .ai-mod-modal__rule-label { font-weight: 800; color: var(--ink); }
+      .ai-mod-modal__rule-desc { font-size: 0.78rem; color: var(--ink-dim); margin-top: 0.2rem; }
+      .ai-mod-modal__branches-title {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--ink-dim);
+        margin-bottom: 0.3rem;
+      }
+      .ai-mod-modal__branches-list {
+        max-height: 160px; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 0.3rem;
+      }
+      .ai-mod-branch {
+        padding: 0.4rem 0.6rem;
+        background: var(--cream-soft);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: var(--ink);
+      }
+      .ai-mod-branch__path { color: var(--ink-dim); font-size: 0.75rem; }
     </style>
   </head>
   <body>
@@ -85,10 +143,23 @@
       <header class="shell-header">
         <div class="shell-title">🌐 Ludellus</div>
         <div class="shell-switcher" id="switcher"></div>
-        <div style="margin-left: auto;">
+        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+          <button class="ludellus-btn ludellus-btn--ghost" id="btnAiMod" title="AI 改修">🤖 かいぞう</button>
           <button class="ludellus-btn" id="btnStart">▶ はじめる</button>
         </div>
       </header>
+
+      <div class="ai-mod-modal" id="aiModModal" hidden>
+        <div class="ai-mod-modal__inner">
+          <div class="ai-mod-modal__title">🤖 この あそびを どう かいぞう する？</div>
+          <div class="ai-mod-modal__rules" id="aiModRules"></div>
+          <div class="ai-mod-modal__branches" id="aiModBranches">
+            <div class="ai-mod-modal__branches-title">いままでの えだ</div>
+            <div class="ai-mod-modal__branches-list" id="aiModBranchList"></div>
+          </div>
+          <button class="ludellus-btn ludellus-btn--ghost" id="btnAiModClose">うにに もどる</button>
+        </div>
+      </div>
 
       <main class="shell-canvas-wrap">
         <canvas id="game"></canvas>

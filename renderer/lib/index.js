@@ -10,3 +10,4 @@ export * from "./mobile.js";
 export * from "./render.js";
 export * from "./scene.js";
 export * from "./scene-manager.js";
+export * from "./branches.js";

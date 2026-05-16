@@ -144,7 +144,7 @@ uni-writing-game#hiragana → japanese.g1.unit1.hiragana
 
 | Phase | 内容 | 依存 |
 |---|---|---|
-| **Phase 1** | 分岐ストア (`lib/branches.js`) + ルールベース改修 + 分岐ツリー UI | foundation 基盤 (本 PR で達成) |
+| **Phase 1** | 分岐ストア (`lib/branches.js`) + ルールベース改修 + 分岐ツリー UI | **実装済 (PR #8)** — easier / harder / kanji-mix の 3 ルール、 shell に 🤖 かいぞうボタン modal |
 | **Phase 2** | 単元タグの導入 + 学力プロファイル算出 + main 復帰の段階生成 | 単元マップの整備 (spec/) |
 | **Phase 3** | Claude API opt-in 改修 (自由度高い改修向け) | ネットワーク機能の追加、 ユーザ同意 UI |
 | **Phase 4** | 保護者レポート / 教師ダッシュボード | データモデルの整備、 集計 UI |
