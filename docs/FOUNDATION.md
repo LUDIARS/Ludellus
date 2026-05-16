@@ -14,6 +14,7 @@
 | `voice.js` | SpeechSynthesis ja-JP ラッパ (onstart + onboundary + fallback) | uni-math v10 / uni-writing-game v8 |
 | `sound.js` | SE シンセ (ピンポーン / ブブー / デロロン / tick / うにループ) | uni-math + uni-writing-game |
 | `mobile.js` | touch-action 抑止 + JS preventDefault | uni-writing-game v4 + uni-math v8 |
+| `render.js` | 抽象描画 API、 Canvas 2D / Pictor の backend 自動切替 | [PICTOR.md](./PICTOR.md) Phase 1 |
 | `index.js` | barrel export | — |
 
 新規ゲームのボイラープレート: [`renderer/templates/game.html`](../renderer/templates/game.html)
@@ -115,6 +116,31 @@ startUniLoop();
 // 離した時
 stopUniLoop();
 ```
+
+## render.js
+
+```js
+import { createRenderer, COLORS } from "../../lib/index.js";
+
+const renderer = createRenderer(canvas, { preferBackend: "auto" });
+renderer.setSize(800, 600);
+
+function frame() {
+  renderer.beginScene({ clearColor: COLORS.cream });
+  renderer.submitCircle("uni-core", { x: 400, y: 100, r: 30, color: COLORS.white });
+  renderer.submitLine("uni-tentacle-0", { x1: 400, y1: 100, x2: 460, y2: 60, w: 6, color: COLORS.uniOrange });
+  renderer.submitText("title", { x: 400, y: 30, text: "せいかい", size: 88, color: COLORS.uniDeep });
+  renderer.endScene();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+```
+
+- **backend 自動選択** — `window.PictorBridge` があれば pictor、 なければ canvas2d
+- **retained-mode 風 API** — id を渡せば backend 側で保持される (Pictor の DOD 向け)
+  - canvas2d backend では id 無しと同じ振る舞い (毎フレーム再描画)
+- 色は `0xRRGGBBAA` の uint32 (theme.css の CSS 変数と同色) または CSS 文字列
+- 詳細: [`PICTOR.md`](./PICTOR.md)
 
 ## mobile.js
 
