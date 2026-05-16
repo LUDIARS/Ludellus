@@ -1,4 +1,4 @@
-# UniLand Foundation Library
+# Ludellus Foundation Library
 
 `renderer/lib/` 配下の共通モジュール群。 `sample/` の standalone HTML から共通パターンを抽出し、
 新規ゲームが軽量に書ける土台にする。 各サンプル (uni-writing-game / uni-math 等) と同じ振る舞いを
@@ -33,22 +33,22 @@ const all = getAllScores("uni-math");                   // → { easy: {best,tot
 const stats = getStats();                               // → 全ゲーム集計
 ```
 
-- localStorage key: `uniland.scores.v1`
+- localStorage key: `ludellus.scores.v1`
 - 旧キー `uni-math-best-scores-v1` から自動マイグレーション (一回のみ、 旧キーは温存)
 
 ## theme.css
 
-`#stage` に `class="uniland-stage"` を付けると **自前で画面全体を覆う不透明レイヤー** になる。
+`#stage` に `class="ludellus-stage"` を付けると **自前で画面全体を覆う不透明レイヤー** になる。
 これが [[feedback_dark_mode_stage_layer]] にあたる手筋で、 OS ダークモードでも崩れない。
 
 主なクラス:
 
-- `.uniland-stage` — ルートコンテナ
-- `.uniland-btn` / `.uniland-btn--ghost` — ボタン (オレンジ反転 / 透明枠線)
-- `.uniland-panel` — 選択肢パネル (`.is-shaking` で残り 3 秒ぐらぐら)
-- `.uniland-result` + `.uniland-result__text--big` / `--small` — 結果オーバーレイ (背景は `pointer-events: none`)
-- `.uniland-word` + `.uniland-word .char.is-now-speaking` — 単語読み上げハイライト
-- `.uniland-progress` + `.is-current` / `.is-correct` / `.is-wrong` — 10 問進捗ドット
+- `.ludellus-stage` — ルートコンテナ
+- `.ludellus-btn` / `.ludellus-btn--ghost` — ボタン (オレンジ反転 / 透明枠線)
+- `.ludellus-panel` — 選択肢パネル (`.is-shaking` で残り 3 秒ぐらぐら)
+- `.ludellus-result` + `.ludellus-result__text--big` / `--small` — 結果オーバーレイ (背景は `pointer-events: none`)
+- `.ludellus-word` + `.ludellus-word .char.is-now-speaking` — 単語読み上げハイライト
+- `.ludellus-progress` + `.is-current` / `.is-correct` / `.is-wrong` — 10 問進捗ドット
 
 ## uni-character.js
 
@@ -205,7 +205,7 @@ import { installTouchGuard, applyTouchAction, getOrientation } from "../../lib/i
 // 起動時 1 回 (再呼び出しは無害)
 installTouchGuard();
 
-// 例外でタップ通したい要素には data-uniland-allow-touch を付ける
+// 例外でタップ通したい要素には data-ludellus-allow-touch を付ける
 // (button/input/select/textarea は既定で通す)
 ```
 

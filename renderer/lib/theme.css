@@ -1,5 +1,5 @@
 /*
- * UniLand 共通テーマ。 sample/uni-writing-game / uni-math の見た目をベースにする。
+ * Ludellus 共通テーマ。 sample/uni-writing-game / uni-math の見た目をベースにする。
  *
  * 重要原則:
  *   1. クリーム紙 + 濃茶インク + うにオレンジの 3 色を基調にする
@@ -71,7 +71,7 @@ html, body {
 }
 
 /* ── #stage — 自前不透明レイヤー (ダークモード耐性) ── */
-.uniland-stage {
+.ludellus-stage {
   position: fixed;
   inset: 0;
   color: #2a2118;
@@ -89,7 +89,7 @@ html, body {
 }
 
 /* ── ボタン共通 ─────────────────────────────────── */
-.uniland-btn {
+.ludellus-btn {
   padding: var(--pad-y) var(--pad-x);
   border-radius: var(--radius);
   font-weight: 700;
@@ -101,13 +101,13 @@ html, body {
   transition: transform 80ms ease, box-shadow 80ms ease;
   -webkit-tap-highlight-color: transparent;
 }
-.uniland-btn:active:not(:disabled) {
+.ludellus-btn:active:not(:disabled) {
   transform: translateY(2px);
   box-shadow: 0 2px 0 var(--uni-deep), 0 3px 8px var(--uni-glow);
 }
-.uniland-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.ludellus-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-.uniland-btn--ghost {
+.ludellus-btn--ghost {
   background: transparent;
   color: var(--ink);
   border: 2px solid var(--line);
@@ -115,7 +115,7 @@ html, body {
 }
 
 /* ── パネル共通 (選択肢ボタン等) ─────────────────── */
-.uniland-panel {
+.ludellus-panel {
   background: linear-gradient(180deg, #fffaf1 0%, #f3e8d2 100%);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 12px var(--paper-shadow), inset 0 0 0 2px rgba(255, 255, 255, 0.6);
@@ -129,10 +129,10 @@ html, body {
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.uniland-panel.is-shaking {
-  animation: uniland-shake 0.32s infinite;
+.ludellus-panel.is-shaking {
+  animation: ludellus-shake 0.32s infinite;
 }
-@keyframes uniland-shake {
+@keyframes ludellus-shake {
   0%, 100% { transform: translateX(0) rotate(0); }
   25% { transform: translateX(-3px) rotate(-1deg); }
   50% { transform: translateX(3px) rotate(1deg); }
@@ -140,7 +140,7 @@ html, body {
 }
 
 /* ── 結果オーバーレイ ───────────────────────────── */
-.uniland-result {
+.ludellus-result {
   position: fixed;
   inset: 0;
   display: flex;
@@ -149,7 +149,7 @@ html, body {
   pointer-events: none;       /* 背景の Canvas にタップを通す */
   z-index: 50;
 }
-.uniland-result__text {
+.ludellus-result__text {
   pointer-events: auto;
   font-weight: 900;
   text-align: center;
@@ -157,45 +157,45 @@ html, body {
   text-shadow:
     0 0 8px rgba(255, 255, 255, 0.9),
     0 0 18px var(--uni-glow);
-  animation: uniland-pop 0.45s cubic-bezier(0.2, 1.6, 0.6, 1) both;
+  animation: ludellus-pop 0.45s cubic-bezier(0.2, 1.6, 0.6, 1) both;
 }
-.uniland-result__text--big { font-size: 88px; }
-.uniland-result__text--small { font-size: 40px; color: var(--ink-dim); }
-@keyframes uniland-pop {
+.ludellus-result__text--big { font-size: 88px; }
+.ludellus-result__text--small { font-size: 40px; color: var(--ink-dim); }
+@keyframes ludellus-pop {
   from { transform: scale(0.6); opacity: 0; }
   to   { transform: scale(1.0); opacity: 1; }
 }
 
 /* ── 単語/問題行 (uni-writing-game 由来) ──────────── */
-.uniland-word { display: flex; gap: 0.4rem; justify-content: center; }
-.uniland-word.is-speaking { animation: uniland-breathe 1.4s ease-in-out infinite; }
-.uniland-word .char { transition: transform 120ms ease, color 120ms ease; }
-.uniland-word .char.is-now-speaking { animation: uniland-char-pop 0.5s ease both; color: var(--uni-deep); }
-@keyframes uniland-breathe {
+.ludellus-word { display: flex; gap: 0.4rem; justify-content: center; }
+.ludellus-word.is-speaking { animation: ludellus-breathe 1.4s ease-in-out infinite; }
+.ludellus-word .char { transition: transform 120ms ease, color 120ms ease; }
+.ludellus-word .char.is-now-speaking { animation: ludellus-char-pop 0.5s ease both; color: var(--uni-deep); }
+@keyframes ludellus-breathe {
   0%, 100% { transform: scale(1.0); }
   50% { transform: scale(1.06); }
 }
-@keyframes uniland-char-pop {
+@keyframes ludellus-char-pop {
   0% { transform: scale(1.0); }
   50% { transform: scale(1.32); }
   100% { transform: scale(1.1); }
 }
 
 /* ── 進捗ドット (uni-math 由来) ──────────────────── */
-.uniland-progress { display: flex; gap: 0.4rem; }
-.uniland-progress__dot {
+.ludellus-progress { display: flex; gap: 0.4rem; }
+.ludellus-progress__dot {
   width: 14px; height: 14px;
   border-radius: 50%;
   background: rgba(64, 39, 18, 0.15);
   border: 2px solid transparent;
   transition: background 120ms ease, border-color 120ms ease;
 }
-.uniland-progress__dot.is-current { border-color: var(--uni-orange); }
-.uniland-progress__dot.is-correct { background: var(--ok); }
-.uniland-progress__dot.is-wrong { background: var(--warn); }
+.ludellus-progress__dot.is-current { border-color: var(--uni-orange); }
+.ludellus-progress__dot.is-correct { background: var(--ok); }
+.ludellus-progress__dot.is-wrong { background: var(--warn); }
 
 /* ── トースト ──────────────────────────────────── */
-.uniland-toast {
+.ludellus-toast {
   position: fixed; left: 50%; bottom: 8%;
   transform: translateX(-50%);
   background: rgba(42, 33, 24, 0.85);
@@ -208,4 +208,4 @@ html, body {
   transition: opacity 200ms ease;
   z-index: 80;
 }
-.uniland-toast.is-show { opacity: 1; }
+.ludellus-toast.is-show { opacity: 1; }

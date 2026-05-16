@@ -1,4 +1,4 @@
-// UniLand shell — 永続的に動く外殻。 foundation の AudioContext / SpeechSynthesis / renderer を
+// Ludellus shell — 永続的に動く外殻。 foundation の AudioContext / SpeechSynthesis / renderer を
 // 1 回だけ初期化し、 SceneManager に scene を登録 + 切替する。 これで scene 間遷移時に重い初期化を
 // 繰り返さない (ユーザ指示の「読み込むリソースを最小限度」)。
 //

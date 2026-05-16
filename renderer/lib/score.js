@@ -1,8 +1,8 @@
-// UniLand 共通スコアモジュール (localStorage ベース)。
+// Ludellus 共通スコアモジュール (localStorage ベース)。
 // 中央サーバ無しで動く前提。 sample/ 個別ゲームは uni-math のように独自キーで保存していたが、
 // foundation 経由のゲームは本モジュール 1 つに集約する。
 //
-// LocalStorage key: "uniland.scores.v1"
+// LocalStorage key: "ludellus.scores.v1"
 // 構造:
 //   {
 //     "<gameId>": {
@@ -15,7 +15,10 @@
 //     }
 //   }
 
-const STORAGE_KEY = "uniland.scores.v1";
+const STORAGE_KEY = "ludellus.scores.v1";
+
+// プロジェクト名変更 (UniLand → Ludellus) 前のキー。 起動時に 1 回だけ吸収する。
+const STORE_LEGACY_KEY = "uniland.scores.v1";
 
 // 旧キーから一回マイグレーション (uni-math が v1 の頃に使っていた個別キー)。
 const LEGACY_KEYS = {
@@ -74,10 +77,30 @@ function migrateLegacy(store) {
 
 let cache = null;
 
+function migrateStoreKey(store) {
+  // ludellus.scores.v1 がまだ空で、 uniland.scores.v1 (旧プロジェクト名) があれば取り込む。
+  if (Object.keys(store).length > 0) return false;
+  try {
+    const raw = localStorage.getItem(STORE_LEGACY_KEY);
+    if (!raw) return false;
+    const legacy = JSON.parse(raw);
+    if (!legacy || typeof legacy !== "object") return false;
+    for (const [gameId, modes] of Object.entries(legacy)) {
+      store[gameId] = { ...modes };
+    }
+    // 旧キーは温存 (バージョン併存運用中の他クライアント対応)
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function load() {
   if (cache) return cache;
   const store = safeRead();
-  if (migrateLegacy(store)) safeWrite(store);
+  let changed = migrateStoreKey(store);
+  if (migrateLegacy(store)) changed = true;
+  if (changed) safeWrite(store);
   cache = store;
   return cache;
 }

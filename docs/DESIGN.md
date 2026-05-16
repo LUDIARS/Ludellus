@@ -1,4 +1,4 @@
-# UniLand 設計メモ
+# Ludellus 設計メモ
 
 ## 目的
 
@@ -21,9 +21,9 @@
 │   WebView 上で renderer/lib/ + Pictor (WebGL2/WASM or native) │
 └──────────────────────────────────────────────────────────────┘
        │                       │                      │
-       ▼ Cernere PASETO        ▼ UniLand REST         ▼ Memoria REST
+       ▼ Cernere PASETO        ▼ Ludellus REST         ▼ Memoria REST
 ┌──────────────┐    ┌──────────────────┐    ┌───────────────────┐
-│   Cernere    │    │ UniLand サーバ     │    │     Memoria       │
+│   Cernere    │    │ Ludellus サーバ     │    │     Memoria       │
 │ (大人 auth)   │←──→│ (scores/branches/  │───→│ (学習活動の集計    │
 │              │ sub│  ai-mod / sync)   │PUT │  + 保護者レポート) │
 └──────────────┘    └──────────────────┘    └───────────────────┘
@@ -77,7 +77,7 @@ raw な keycode / 座標は **emit しない**。
 ```json
 {
   "id": "sample-hello",
-  "title": "Hello UniLand",
+  "title": "Hello Ludellus",
   "description": "...",
   "entry": "index.html",
   "tags": ["sample"]
@@ -91,7 +91,7 @@ renderer は iframe sandbox="allow-scripts allow-pointer-lock" でロードす�
 | Phase | 内容 |
 |---|---|
 | **v0.1 (現状)** | scaffold + foundation lib + 抽象 render API (Canvas 2D backend) |
-| **v0.2** | PWA manifest + service worker + UniLand サーバ MVP + score sync |
+| **v0.2** | PWA manifest + service worker + Ludellus サーバ MVP + score sync |
 | **v0.3** | Cernere 親 SSO + 子供プロファイル + Memoria 通知 |
 | **v0.4** | Capacitor + Pictor WebGL2 backend (WASM)、 Store 配布開始 |
 | **v0.5** | Native Pictor plugin (iOS/Android Vulkan/MoltenVK) |

@@ -21,7 +21,7 @@ interface MockupManifest {
 
 declare global {
   interface Window {
-    uniland: {
+    ludellus: {
       listMockups: () => Promise<MockupManifest[]>;
       startMonitor: () => Promise<{ ok: boolean; reason?: string }>;
       stopMonitor: () => Promise<void>;
@@ -38,7 +38,7 @@ const btnStart = document.getElementById("btnStart") as HTMLButtonElement;
 const btnStop = document.getElementById("btnStop") as HTMLButtonElement;
 
 async function refreshList(): Promise<void> {
-  const items = await window.uniland.listMockups();
+  const items = await window.ludellus.listMockups();
   listEl.innerHTML = "";
   if (items.length === 0) {
     const li = document.createElement("li");
@@ -82,7 +82,7 @@ function escapeHtml(s: string): string {
 }
 
 btnStart.addEventListener("click", async () => {
-  const res = await window.uniland.startMonitor();
+  const res = await window.ludellus.startMonitor();
   if (!res.ok) {
     metricEl.textContent = `入力監視: 起動失敗 — ${res.reason ?? "unknown"}`;
     return;
@@ -92,11 +92,11 @@ btnStart.addEventListener("click", async () => {
 });
 
 btnStop.addEventListener("click", async () => {
-  await window.uniland.stopMonitor();
+  await window.ludellus.stopMonitor();
   btnStart.disabled = false;
   btnStop.disabled = true;
   renderMetric(null);
 });
 
-window.uniland.onMetric(renderMetric);
+window.ludellus.onMetric(renderMetric);
 refreshList();

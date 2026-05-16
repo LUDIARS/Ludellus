@@ -1,4 +1,4 @@
-// UniLand foundation の barrel export。 新規ゲームは
+// Ludellus foundation の barrel export。 新規ゲームは
 //   import { Uni, speak, playCorrect, createRenderer, ... } from "../../lib/index.js";
 // で必要なものをまとめて取り出せる。
 

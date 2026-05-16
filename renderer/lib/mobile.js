@@ -7,7 +7,7 @@ let installed = false;
 function shouldAllow(target) {
   if (!(target instanceof Element)) return false;
   // ボタン・入力欄はネイティブクリック合成を壊さないようイベントを通す
-  return !!target.closest("button, input, select, textarea, [data-uniland-allow-touch]");
+  return !!target.closest("button, input, select, textarea, [data-ludellus-allow-touch]");
 }
 
 /**
