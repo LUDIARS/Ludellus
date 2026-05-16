@@ -1,7 +1,7 @@
 // Ludellus PWA service worker。 オフライン優先 (cache-first for static, network-first for dynamic).
 // 中央 Web と連携する API 呼び出しは fetch のままパススルー (オフラインなら失敗 → score.js が sync queue に温存)。
 
-const CACHE_VERSION = "ludellus-v4";
+const CACHE_VERSION = "ludellus-v5";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -23,6 +23,7 @@ const PRECACHE_URLS = [
   "./lib/scene.js",
   "./lib/scene-manager.js",
   "./lib/branches.js",
+  "./lib/curriculum.js",
   "./lib/index.js",
   "./games/uni-tap/scene.js",
   "./games/uni-rain/scene.js",

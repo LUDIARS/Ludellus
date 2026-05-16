@@ -13,7 +13,9 @@ import {
   speak, cancel as cancelSpeech,
   getBestScore, saveScore, hasAttainedFullScore, getStats,
   getOrCreateMain, listBranches, applyRule, listRules, pathToMain,
+  getAbilityProfile, stepsToMain,
 } from "./lib/index.js";
+import { CURRICULUM_UNITS, findUnit, defaultUnitTags } from "./lib/curriculum.js";
 
 import { UniTapScene } from "./games/uni-tap/scene.js";
 import { UniRainScene } from "./games/uni-rain/scene.js";
@@ -167,25 +169,54 @@ function renderAiModRules() {
 function renderAiModBranches() {
   aiModBranchList.innerHTML = "";
   const gameId = manager.activeId;
-  // main を必ず存在させる (現在のモードは scene 内部、 簡略のため "default" 固定)
   const mode = "default";
   getOrCreateMain(gameId, mode);
   const branches = listBranches(gameId);
+
+  // 学力プロファイル (このゲームの単元のみ抜き出して表示)
+  const profile = getAbilityProfile();
+  const ownUnits = defaultUnitTags(gameId, mode);
+  if (ownUnits.length > 0) {
+    const profDiv = document.createElement("div");
+    profDiv.className = "ai-mod-branch";
+    profDiv.innerHTML = `<div class="ai-mod-branch__path">📚 たんげん:</div>`;
+    for (const unitId of ownUnits) {
+      const unit = findUnit(unitId);
+      const p = profile[unitId];
+      const levelLabel = p ? levelLabelJa(p.level) : "まだ";
+      const ratio = p ? `(${p.best}/${p.total})` : "";
+      profDiv.innerHTML += `<div style="margin-left:0.6rem;font-size:0.78rem;">• ${unit?.label ?? unitId} — ${levelLabel} ${ratio}</div>`;
+    }
+    aiModBranchList.appendChild(profDiv);
+  }
+
   if (branches.length === 0) {
-    aiModBranchList.innerHTML = `<div class="ai-mod-branch">まだ えだは ないよ</div>`;
+    aiModBranchList.innerHTML += `<div class="ai-mod-branch">まだ えだは ないよ</div>`;
     return;
   }
   for (const b of branches) {
     const div = document.createElement("div");
     div.className = "ai-mod-branch";
     const path = pathToMain(b.id);
-    const hops = path.length - 1; // main 自身を除く
+    const hops = path.length - 1;
     const created = new Date(b.createdAt).toLocaleDateString();
+    const steps = stepsToMain(b.id);
     div.innerHTML = `
       <div><strong>${b.id}</strong> (${created})</div>
       <div class="ai-mod-branch__path">main まで ${hops} だん${hops > 0 ? "" : " (これが main)"}</div>
+      ${steps.length > 0 ? `<div class="ai-mod-branch__path">↩ ${steps.map(s => s.humanLabel).join(" → ")}</div>` : ""}
     `;
     aiModBranchList.appendChild(div);
+  }
+}
+
+function levelLabelJa(level) {
+  switch (level) {
+    case "mastered":   return "🌟 ばっちり";
+    case "competent":  return "✨ できる";
+    case "learning":   return "✏ おぼえちゅう";
+    case "untouched":
+    default:           return "—";
   }
 }
 
