@@ -185,6 +185,38 @@ export class Uni {
     const dy = py - (this.y + this.actYOffset);
     return Math.hypot(dx, dy) <= this.baseRadius * 1.4 * this.actScale + pad;
   }
+
+  /**
+   * 抽象 render API ([[render.js]] の createRenderer 返り値) 経由で描画する。
+   * id を渡すと触手 + コアをユニークな retain id で submit (Pictor backend で差分更新が効く)。
+   * 既存サンプルが Canvas 2D で書かれていた頃の `draw(ctx)` と等価。
+   */
+  drawAbstract(renderer, idPrefix) {
+    const r = this.baseRadius * this.actScale;
+    const cx = this.x;
+    const cy = this.y + this.actYOffset;
+    const lineColor = this.color === "#ff7a3a" ? 0xff7a3aff : this.color;
+    const coreColor = this.coreColor === "#fffaf1" ? 0xfffaf1ff : this.coreColor;
+
+    for (let i = 0; i < this.tentacles.length; i++) {
+      const t = this.tentacles[i];
+      const angle = (this.idleMotion ? t.baseAngle + Math.sin(t.wig) * 0.05 : t.baseAngle) + this.actRot;
+      const len = (t.len + this.actTentBoost) * r * 1.4;
+      const ax = cx + Math.cos(angle) * r * 0.35;
+      const ay = cy + Math.sin(angle) * r * 0.35;
+      const bx = cx + Math.cos(angle) * len;
+      const by = cy + Math.sin(angle) * len;
+      renderer.submitLine(`${idPrefix}:t${i}`, {
+        x1: ax, y1: ay, x2: bx, y2: by,
+        w: Math.max(2, r * 0.18),
+        color: lineColor,
+      });
+    }
+    renderer.submitCircle(`${idPrefix}:core`, {
+      x: cx, y: cy, r: r * 0.35,
+      color: coreColor,
+    });
+  }
 }
 
 /**

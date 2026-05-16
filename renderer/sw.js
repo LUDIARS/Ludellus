@@ -1,7 +1,7 @@
 // UniLand PWA service worker。 オフライン優先 (cache-first for static, network-first for dynamic).
 // 中央 Web と連携する API 呼び出しは fetch のままパススルー (オフラインなら失敗 → score.js が sync queue に温存)。
 
-const CACHE_VERSION = "uniland-v1";
+const CACHE_VERSION = "uniland-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -9,6 +9,8 @@ const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const PRECACHE_URLS = [
   "./",
   "./index.html",
+  "./shell.html",
+  "./shell.js",
   "./manifest.webmanifest",
   "./icons/uni-icon.svg",
   "./lib/score.js",
@@ -18,7 +20,11 @@ const PRECACHE_URLS = [
   "./lib/sound.js",
   "./lib/mobile.js",
   "./lib/render.js",
+  "./lib/scene.js",
+  "./lib/scene-manager.js",
   "./lib/index.js",
+  "./games/uni-tap/scene.js",
+  "./games/uni-rain/scene.js",
 ];
 
 self.addEventListener("install", (event) => {

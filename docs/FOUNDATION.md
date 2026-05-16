@@ -15,6 +15,8 @@
 | `sound.js` | SE シンセ (ピンポーン / ブブー / デロロン / tick / うにループ) | uni-math + uni-writing-game |
 | `mobile.js` | touch-action 抑止 + JS preventDefault | uni-writing-game v4 + uni-math v8 |
 | `render.js` | 抽象描画 API、 Canvas 2D / Pictor の backend 自動切替 | [PICTOR.md](./PICTOR.md) Phase 1 |
+| `scene.js` | Scene インターフェース (ゲーム 1 つ = 1 scene) | seamless 切替設計 |
+| `scene-manager.js` | scene の登録 + active 切替 + lifecycle 配送 | shell が永続的に持つ |
 | `index.js` | barrel export | — |
 
 新規ゲームのボイラープレート: [`renderer/templates/game.html`](../renderer/templates/game.html)
@@ -141,6 +143,59 @@ requestAnimationFrame(frame);
   - canvas2d backend では id 無しと同じ振る舞い (毎フレーム再描画)
 - 色は `0xRRGGBBAA` の uint32 (theme.css の CSS 変数と同色) または CSS 文字列
 - 詳細: [`PICTOR.md`](./PICTOR.md)
+
+## scene.js + scene-manager.js (Seamless 切替)
+
+ユーザ要請の「同一エンジンを保ったままゲーム切替、 読み込みリソース最小限」 のための層。
+`renderer/shell.html` が永続的に動き、 AudioContext / SpeechSynthesis / renderer は 1 回だけ初期化される。
+個別ゲームは `Scene` を継承し、 切替時は scene.exit() → scene.enter() で完結 (heavy 初期化を繰り返さない)。
+
+### 最小実装例
+
+```js
+import { Scene } from "../../lib/index.js";
+
+export class MyGameScene extends Scene {
+  static id = "my-game";
+  static label = "🎮 マイゲーム";
+  static description = "短い説明 (ヒント領域に出る)";
+
+  init(ctx) {
+    // ctx.renderer / ctx.canvas / ctx.viewport / ctx.audio / ctx.voice / ctx.scoreApi / ctx.showToast
+    this.ctx = ctx;
+  }
+
+  enter() { /* 切替で active になった */ }
+  exit() { /* 切替で非 active になった */ }
+
+  frame(dt, now) {
+    this.ctx.renderer.beginScene({ clearColor: 0xf7f1e8ff });
+    // ...描画...
+    this.ctx.renderer.endScene();
+  }
+
+  onPointer(kind, ev) { /* "down"/"up"/"move" + 論理 px の x,y,button */ }
+  onKey(kind, ev) { /* "down"/"up" + KeyboardEvent */ }
+  onResize() { /* ctx.viewport は最新 */ }
+}
+```
+
+shell.js に登録するだけで切替 chip に出る:
+
+```js
+manager.register(MyGameScene);
+```
+
+### 実装例
+
+- `renderer/games/uni-tap/scene.js` — メイン + 背景うに 3 体、 タップで burst
+- `renderer/games/uni-rain/scene.js` — うに降下 + キャッチ 30 秒セッション + ベスト記録
+
+### 既存 sample との関係
+
+`sample/*.html` はリファレンスとして温存、 scene 形式への移植は別作業。
+`renderer/index.html` (iframe ベースの旧モックアップ閲覧) と `renderer/shell.html` (scene 形式の seamless 切替)
+は併存。
 
 ## mobile.js
 
